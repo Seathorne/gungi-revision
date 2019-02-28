@@ -1,5 +1,5 @@
 ﻿using GungiRevision.Objects;
-using GungiRevision.Util;
+using GungiRevision.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,15 +10,44 @@ namespace GungiRevision
 {
     class GameRunner
     {
-        public static Player black_player, white_player;
+        private static Board board;
+        private static Player[] players;
+        public static Piece p_selected;
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            black_player = new Player(PlayerColor.BLACK);
-            white_player = new Player(PlayerColor.WHITE);
+            players = new Player[]
+            {
+                new Player(board, PlayerColor.BLACK),
+                new Player(board, PlayerColor.WHITE)
+            };
 
-            U.PrLi( black_player.GetHashCode() + "");
-            U.PrLi( white_player.GetHashCode() + "");
+            board = new Board(players);
+            p_selected = null;
+
+            Test();
+        }
+
+        private static void Test()
+        {
+            Util.PrLi(AllHashesUnique());
+        }
+
+        private static bool AllHashesUnique()
+        {
+            List<Object> list = new List<Object>();
+
+            // Player hashes
+            list.Add(players[(int)PlayerColor.BLACK]);
+            list.Add(players[(int)PlayerColor.WHITE]);
+
+            // Location hashes
+            for (int r = 1; r <= Constants.MAX_RANKS; r++)
+                for (int f = 1; f <= Constants.MAX_FILES; f++)
+                    for (int t = 1; t <= Constants.MAX_TIERS; t++)
+                        list.Add(new Location(r, f, t));
+            
+            return Util.HashesUnique<Object>(list);
         }
     }
 }

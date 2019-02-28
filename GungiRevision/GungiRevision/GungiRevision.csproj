@@ -43,14 +43,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Objects\Board.cs" />
+    <Compile Include="Objects\Moveset.cs" />
     <Compile Include="Objects\Piece.cs" />
     <Compile Include="Objects\Player.cs" />
-    <Compile Include="Util\BoardProperties.cs" />
+    <Compile Include="Utility\Properties.cs" />
     <Compile Include="Objects\Location.cs" />
-    <Compile Include="Util\OutsideBoardException.cs" />
+    <Compile Include="Utility\OutsideBoardException.cs" />
     <Compile Include="GameRunner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Util\U.cs" />
+    <Compile Include="Utility\Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
