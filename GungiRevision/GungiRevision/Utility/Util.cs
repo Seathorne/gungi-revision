@@ -15,7 +15,7 @@ namespace GungiRevision.Utility
         {
             Console.Write(o.ToString());
         }
-        public static void PrLi<T>(T o)
+        public static void PRL<T>(T o)
         {
             Console.WriteLine(o.ToString());
         }
@@ -27,7 +27,7 @@ namespace GungiRevision.Utility
 
         public static void PrintInputThusFar()
         {
-            PrLi(input_thus_far);
+            PRL(input_thus_far);
         }
 
 
@@ -63,7 +63,7 @@ namespace GungiRevision.Utility
                     if (hash_list[i] == hash_list[j])
                     {
                         hashes_unique = false;
-                        PrLi("Hashes not unique: " + o_list[i] + " and " + o_list[j] + " are equal to " + hash_list[i] + ".");
+                        PRL("Hashes not unique: " + o_list[i] + " and " + o_list[j] + " are equal to " + hash_list[i] + ".");
                     }
             
             return hashes_unique;

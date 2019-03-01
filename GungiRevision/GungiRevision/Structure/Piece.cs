@@ -8,40 +8,40 @@ namespace GungiRevision.Objects
 {
     class Piece
     {
-        public Board board;
-        public Player player;
+        public readonly Board board;
+        public readonly Player player;
 
-        public PieceType type;
+        public readonly PieceType type;
         public Status status;
         public Location location;
         
-        public Moveset moveset;
-        public List<Location> valid_moves, valid_drops;
+        private Moveset moveset;
+        private Location[,] valid_moves, valid_attacks, valid_drops;
         public bool lt_sight;
         public int acting_tier;
 
 
-        public Piece(Board b, Player p, PieceType pt)
+        public Piece(Player pl, PieceType pt)
         {
-            board = b;
-            player = p;
+            player = pl;
+            board = player.board;
 
             type = pt;
             status = Status.HAND;
             location = null;
 
             moveset = new Moveset(this);
-            valid_moves = null;
-            valid_drops = null;
+            Clear();
         }
 
-        public Piece Clone(Board b, Player pl)
+        public Piece Clone(Player pl)
         {
-            Piece p = new Piece(b, pl, this.type);
+            Piece p = new Piece(pl, this.type);
 
             p.location = this.location;
             p.moveset = this.moveset;            // Possibly need to clone this too
             p.valid_moves = this.valid_moves;    // Possibly need to clone this too
+            p.valid_attacks = this.valid_attacks;    // Possibly need to clone this too
             p.valid_drops = this.valid_drops;    // Possibly need to clone this too
             p.lt_sight = this.lt_sight;
             p.acting_tier = this.acting_tier;
@@ -50,21 +50,67 @@ namespace GungiRevision.Objects
         }
 
 
+        public void Clear()
+        {
+            lt_sight = false;
+            if (location != null)
+                acting_tier = location.tier;
+            else
+                acting_tier = 0;
+            
+            valid_moves = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
+            valid_attacks = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
+            valid_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
+        }
+
+        // Called only by Board
         public void DropTo(Location l)
         {
             status = Status.BOARD;
             location = l;
         }
 
+        // Called only by Board
         public void MoveTo(Location l)
         {
             location = l;
         }
 
+        // Called only by Board
         public void Kill()
         {
             status = Status.CAPTURED;
             location = null;
+        }
+
+        public bool CanDropTo(int r, int f)
+        {
+            return valid_drops[r-1, f-1] != null;
+        }
+
+        public bool CanMoveTo(int r, int f)
+        {
+            return valid_moves[r-1, f-1] != null;
+        }
+
+        public bool CanAttackTo(int r, int f)
+        {
+            return valid_attacks[r-1, f-1] != null;
+        }
+
+        public void AddValidDropAt(Location d)
+        {
+            valid_drops[d.rank-1, d.file-1] = d;
+        }
+
+        public void AddValidMoveAt(Location m)
+        {
+            valid_moves[m.rank-1, m.file-1] = m;
+        }
+
+        public void AddValidAttackAt(Location a)
+        {
+            valid_attacks[a.rank-1, a.file-1] = a;
         }
 
 
@@ -74,7 +120,7 @@ namespace GungiRevision.Objects
         }
 
         
-        public void UpdateMoves()
+        public void UpdateMovesAndAttacks()
         {
             switch (type)
             {
@@ -91,7 +137,7 @@ namespace GungiRevision.Objects
                     moveset.AddStraightMove(2,  1,1,1,1,1, MoveType.BLOCKABLE);
                     moveset.AddStraightMove(3,  2,1,1,1,1, MoveType.BLOCKABLE);
 
-                    moveset.AddBentMove(3,  1,0,0,0, MoveType.BLOCKABLE);
+                    moveset.AddBentMove(3,  2,0,0,0, MoveType.BLOCKABLE);
                     break;
                 case PieceType.MAJOR:
                     moveset.AddStraightMove(1,  1,1,0,1,0, MoveType.BLOCKABLE);
@@ -111,9 +157,9 @@ namespace GungiRevision.Objects
                 case PieceType.KNIGHT:
                     moveset.AddStraightMove(1,  1,0,1,0,0, MoveType.BLOCKABLE);
                     moveset.AddStraightMove(2,  0,1,0,1,0, MoveType.BLOCKABLE);
-                    moveset.AddBentMove(1,  1,0,0,0, MoveType.TELEPORTABLE);
-                    moveset.AddBentMove(2,  1,1,0,0, MoveType.TELEPORTABLE);
-                    moveset.AddBentMove(3,  1,1,1,1, MoveType.TELEPORTABLE);
+                    moveset.AddBentMove(1,  2,0,0,0, MoveType.TELEPORTABLE);
+                    moveset.AddBentMove(2,  2,2,0,0, MoveType.TELEPORTABLE);
+                    moveset.AddBentMove(3,  2,2,2,2, MoveType.TELEPORTABLE);
                     break;
                 case PieceType.SAMURAI:
                     moveset.AddStraightMove(1,  0,1,0,1,0, MoveType.BLOCKABLE);
@@ -121,9 +167,9 @@ namespace GungiRevision.Objects
                     moveset.AddStraightMove(3,  0,Constants.MAX_MOVES,0,Constants.MAX_MOVES,0, MoveType.BLOCKABLE);
                     break;
                 case PieceType.CANNON:
-                    moveset.AddStraightMove(1,  1,0,1,0,1, MoveType.PACIFIST_BLOCKABLE);
-                    moveset.AddStraightMove(2,  2,0,2,0,2, MoveType.PACIFIST_BLOCKABLE);
-                    moveset.AddStraightMove(3,  Constants.MAX_MOVES,0,Constants.MAX_MOVES,0,Constants.MAX_MOVES, MoveType.PACIFIST_BLOCKABLE);
+                    moveset.AddStraightMove(1,  1,0,1,0,1, MoveType.BLOCKABLE_PACIFIST);
+                    moveset.AddStraightMove(2,  2,0,2,0,2, MoveType.BLOCKABLE_PACIFIST);
+                    moveset.AddStraightMove(3,  Constants.MAX_MOVES,0,Constants.MAX_MOVES,0,Constants.MAX_MOVES, MoveType.BLOCKABLE_PACIFIST);
                     moveset.AddStraightMove(0,  Constants.MAX_MOVES,0,Constants.MAX_MOVES,0,Constants.MAX_MOVES, MoveType.JUMP_ATTACK);
                     break;
                 case PieceType.COUNSEL:
@@ -145,37 +191,13 @@ namespace GungiRevision.Objects
             }
         }
 
-        public void UpdateDrops()
-        {
-            valid_drops = board.ValidDrops(this);
-        }
-
-        
-        override
-        public bool Equals(Object o)
-        {
-            return GetHashCode() == o.GetHashCode();
-        }
-
-        override
-        public int GetHashCode()
-        {
-            // Unimplemented
-            return -1;
-        }
-
-
         override
         public string ToString()
         {
             String symbol = ( (char)type ).ToString();
-            switch (player.color)
-            {
-                case PlayerColor.BLACK:
-                    return symbol.ToLower();
-                default:
-                    return symbol;
-            }
+            if (player.color == PlayerColor.BLACK)
+                symbol = symbol.ToLower();
+            return symbol;
         }
     }
 }

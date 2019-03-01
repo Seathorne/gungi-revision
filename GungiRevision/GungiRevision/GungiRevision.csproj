@@ -43,12 +43,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Objects\Board.cs" />
-    <Compile Include="Objects\Moveset.cs" />
-    <Compile Include="Objects\Piece.cs" />
-    <Compile Include="Objects\Player.cs" />
+    <Compile Include="Structure\Board.cs" />
+    <Compile Include="Structure\Moveset.cs" />
+    <Compile Include="Structure\Piece.cs" />
+    <Compile Include="Structure\Player.cs" />
     <Compile Include="Utility\Properties.cs" />
-    <Compile Include="Objects\Location.cs" />
+    <Compile Include="Structure\Location.cs" />
     <Compile Include="Utility\OutsideBoardException.cs" />
     <Compile Include="GameRunner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

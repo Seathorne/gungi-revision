@@ -11,7 +11,7 @@ namespace GungiRevision
     {
         public OutsideBoardException(int r, int f, int t)
         {
-            Util.PrLi(String.Format("OutsideBoardException: location {0:d}-{1:d}-{2:d} out of range.", r, f, t) );
+            Util.PRL(String.Format("OutsideBoardException: location {0:d}-{1:d}-{2:d} out of range.", r, f, t) );
         }
     }
 }

@@ -11,26 +11,47 @@ namespace GungiRevision
     class GameRunner
     {
         private static Board board;
-        private static Player[] players;
         public static Piece p_selected;
+        public static Player black, white;
+        private static Random random;
 
         public static void Main(string[] args)
         {
-            players = new Player[]
-            {
-                new Player(board, PlayerColor.BLACK),
-                new Player(board, PlayerColor.WHITE)
-            };
-
-            board = new Board(players);
+            board = new Board();
+            random = new Random();
             p_selected = null;
 
-            Test();
+            black = board.Player(PlayerColor.BLACK);
+            white = board.Player(PlayerColor.WHITE);
+
+            //Test();
+            Update();
         }
 
         private static void Test()
         {
-            Util.PrLi(AllHashesUnique());
+            black.PrintHand();
+            white.PrintHand();
+            //Util.PrLi(AllHashesUnique());
+        }
+
+        private static void Update()
+        {
+            board.PrintBoard();
+
+            Piece p = white.GetHandPiece(PieceType.PAWN);
+            board.DropTo(p, 5, 5);
+
+            p = white.GetHandPiece(PieceType.LIEUTENANT);
+            int r = random.Next(1, 9), f = random.Next(1, 9);
+            board.DropTo(p, r, f);
+
+            foreach (Piece w in white.TopPieces())
+            {
+                board.Select(w);
+                board.PrintBoardSelection();
+                Util.PRL(w.lt_sight);
+            }
         }
 
         private static bool AllHashesUnique()
@@ -38,8 +59,8 @@ namespace GungiRevision
             List<Object> list = new List<Object>();
 
             // Player hashes
-            list.Add(players[(int)PlayerColor.BLACK]);
-            list.Add(players[(int)PlayerColor.WHITE]);
+            list.Add(board.Player(PlayerColor.BLACK));
+            list.Add(board.Player(PlayerColor.WHITE));
 
             // Location hashes
             for (int r = 1; r <= Constants.MAX_RANKS; r++)
