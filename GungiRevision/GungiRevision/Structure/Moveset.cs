@@ -9,17 +9,82 @@ namespace GungiRevision.Objects
 {
     class Moveset
     {
-        private readonly Piece piece;
-        private readonly Board board;
-
-        public Moveset(Piece p)
+        static Piece piece;
+        
+        public static void UpdateMovesAndAttacksFor(Piece p)
         {
             piece = p;
-            board = p.board;
+            
+            switch (piece.type)
+            {
+                case PieceType.MARSHAL:
+                    AddStraightMove(0,  1,1,1,1,1, MoveType.BLOCKABLE);
+                    break;
+                case PieceType.SPY:
+                    AddStraightMove(1,  1,0,0,1,1, MoveType.BLOCKABLE);
+                    AddStraightMove(2,  2,2,2,0,1, MoveType.BLOCKABLE);
+                    AddStraightMove(3,  Constants.MAX_MOVES,Constants.MAX_MOVES,Constants.MAX_MOVES,0,Constants.MAX_MOVES, MoveType.BLOCKABLE);
+                    break;
+                case PieceType.LIEUTENANT:
+                    AddStraightMove(1,  1,1,1,0,1, MoveType.BLOCKABLE);
+                    AddStraightMove(2,  1,1,1,1,1, MoveType.BLOCKABLE);
+                    AddStraightMove(3,  2,1,1,1,1, MoveType.BLOCKABLE);
+                    AddBentMove(3,  2,0,0,0, MoveType.BLOCKABLE);
+                    break;
+                case PieceType.MAJOR:
+                    AddStraightMove(1,  1,1,0,1,0, MoveType.BLOCKABLE);
+                    AddStraightMove(2,  1,1,1,0,1, MoveType.BLOCKABLE);
+                    AddStraightMove(3,  1,1,1,1,1, MoveType.BLOCKABLE);
+                    break;
+                case PieceType.GENERAL:
+                    AddStraightMove(1,  0,1,0,0,0, MoveType.BLOCKABLE);
+                    AddStraightMove(2,  1,1,0,1,0, MoveType.BLOCKABLE);
+                    AddStraightMove(3,  1,1,1,0,1, MoveType.BLOCKABLE);
+                    break;
+                case PieceType.ARCHER:
+                    AddStraightMove(1,  1,1,1,1,1, MoveType.BLOCKABLE);
+                    AddStraightMove(2,  2,2,2,2,2, MoveType.TELEPORTABLE);
+                    AddStraightMove(3,  3,3,3,3,3, MoveType.TELEPORTABLE);
+                    break;
+                case PieceType.KNIGHT:
+                    AddStraightMove(1,  1,0,1,0,0, MoveType.BLOCKABLE);
+                    AddStraightMove(2,  0,1,0,1,0, MoveType.BLOCKABLE);
+                    AddBentMove(1,  2,0,0,0, MoveType.TELEPORTABLE);
+                    AddBentMove(2,  2,2,0,0, MoveType.TELEPORTABLE);
+                    AddBentMove(3,  2,2,2,2, MoveType.TELEPORTABLE);
+                    break;
+                case PieceType.SAMURAI:
+                    AddStraightMove(1,  0,1,0,1,0, MoveType.TELEPORTABLE);
+                    AddStraightMove(2,  0,2,0,2,0, MoveType.TELEPORTABLE);
+                    AddStraightMove(3,  0,Constants.MAX_MOVES,0,Constants.MAX_MOVES,0, MoveType.BLOCKABLE);
+                    break;
+                case PieceType.CANNON:
+                    AddStraightMove(1,  1,0,1,0,1, MoveType.BLOCKABLE_PACIFIST);
+                    AddStraightMove(2,  2,0,2,0,2, MoveType.BLOCKABLE_PACIFIST);
+                    AddStraightMove(3,  Constants.MAX_MOVES,0,Constants.MAX_MOVES,0,Constants.MAX_MOVES, MoveType.BLOCKABLE_PACIFIST);
+                    AddStraightMove(0,  Constants.MAX_MOVES,0,Constants.MAX_MOVES,0,Constants.MAX_MOVES, MoveType.JUMP_ATTACK);
+                    break;
+                case PieceType.COUNSEL:
+                    AddStraightMove(0,  0,3,3,2,0, MoveType.BLOCKABLE);
+                    break;
+                case PieceType.FORTRESS:
+                    AddStraightMove(0,  1,1,1,1,1, MoveType.BLOCKABLE);
+                    break;
+                case PieceType.MUSKETEER:
+                    AddStraightMove(1,  0,1,0,0,1, MoveType.BLOCKABLE);
+                    AddStraightMove(2,  3,0,0,0,0, MoveType.BLOCKABLE);
+                    AddStraightMove(3,  Constants.MAX_MOVES,0,0,0,0, MoveType.BLOCKABLE);
+                    break;
+                case PieceType.PAWN:
+                    AddStraightMove(1,  1,0,0,0,0, MoveType.BLOCKABLE);
+                    AddStraightMove(2,  1,1,0,0,0, MoveType.BLOCKABLE);
+                    AddStraightMove(3,  1,1,1,0,1, MoveType.BLOCKABLE);
+                    break;
+            }
         }
 
         // Must be updated after elevators
-        public void AddStraightMove(int t,  int up, int updiag, int side, int downdiag, int down, MoveType mt)
+        private static void AddStraightMove(int t,  int up, int updiag, int side, int downdiag, int down, MoveType mt)
         {
             if (piece.player.color == PlayerColor.BLACK)
             {
@@ -31,7 +96,8 @@ namespace GungiRevision.Objects
             if ((t == piece.acting_tier) || (t == 0) || piece.lt_sight)
                 MakeStraightMoves(up, updiag, side, downdiag, down, mt);
         }
-        public void AddBentMove(int t,  int up_updiag, int side_updiag, int side_downdiag, int down_downdiag, MoveType mt)
+
+        private static void AddBentMove(int t,  int up_updiag, int side_updiag, int side_downdiag, int down_downdiag, MoveType mt)
         {
             if (piece.player.color == PlayerColor.BLACK)
             {
@@ -44,7 +110,7 @@ namespace GungiRevision.Objects
                 MakeBentMoves(up_updiag, side_updiag, side_downdiag, down_downdiag, mt);
         }
 
-        private void MakeStraightMoves(int up, int updiag, int side, int downdiag, int down, MoveType mt)
+        private static void MakeStraightMoves(int up, int updiag, int side, int downdiag, int down, MoveType mt)
         {
             Location location = piece.location;
 
@@ -68,7 +134,8 @@ namespace GungiRevision.Objects
             if (down > 0)
                 SightProcedure(down, 0, location, -1, 0, mt);
         }
-        private void MakeBentMoves(int up_updiag, int side_updiag, int side_downdiag, int down_downdiag, MoveType mt)
+
+        private static void MakeBentMoves(int up_updiag, int side_updiag, int side_downdiag, int down_downdiag, MoveType mt)
         {
             Location location = piece.location;
 
@@ -94,7 +161,7 @@ namespace GungiRevision.Objects
             }
         }
 
-        private void SightProcedure(int steps_r, int steps_f, Location l, int rs, int fs, MoveType mt)
+        private static void SightProcedure(int steps_r, int steps_f, Location l, int rs, int fs, MoveType mt)
         {
             int r = l.rank, f = l.file, steps;
             if (mt == MoveType.TELEPORTABLE)
@@ -113,7 +180,7 @@ namespace GungiRevision.Objects
 
             while (Util.ValidLocation(r, f) && steps > 0)
             {
-                int stack_height = board.StackHeight(r, f);
+                int stack_height = piece.board.StackHeight(r, f);
 
                 if (stack_height < Constants.MAX_TIERS && (mt != MoveType.JUMP_ATTACK || jumped) )
                 {
@@ -124,7 +191,7 @@ namespace GungiRevision.Objects
 
                 if (stack_height > 0)
                 {
-                    if (!piece.IsFriendlyWith(board.TopPieceAt(r, f)) && mt != MoveType.BLOCKABLE_PACIFIST)
+                    if (!piece.IsFriendlyWith(piece.board.TopPieceAt(r, f)) && mt != MoveType.BLOCKABLE_PACIFIST)
                     {
                         Location l_attack = new Location(r, f, stack_height);
                         piece.AddValidAttackAt(l_attack);

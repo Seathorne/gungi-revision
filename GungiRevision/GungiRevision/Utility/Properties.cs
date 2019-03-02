@@ -41,7 +41,14 @@ namespace GungiRevision
     {
         BOARD,
         HAND,
-        CAPTURED,
+        CAPTURED
+    }
+
+    public enum CheckStatus
+    {
+        SAFE,
+        CHECK,
+        CHECKMATE
     }
     
     public class Constants

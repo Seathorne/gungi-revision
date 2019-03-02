@@ -10,12 +10,15 @@ namespace GungiRevision.Objects
     class Board
     {
         private readonly Player[] players;
-        private readonly List<Piece>[,] pieces;
+        private readonly List<Piece>[,] board;
 
-        public List<Piece>[] p_top, p_elevators;
-        public Piece[] p_marshals;
+        private List<Piece>[] p_top, p_checked_by;
+        private List<Piece> p_elevators;
+        private Piece[] p_marshals;
+        private Piece p_selected;
+        private CheckStatus[] check_status;
 
-        public Piece p_selected;
+        private Location[,] valid_drops, valid_pawn_drops;
 
 
         public Board()
@@ -26,69 +29,80 @@ namespace GungiRevision.Objects
                 new Player(this, PlayerColor.WHITE)
             };
 
-            pieces = new List<Piece>[Constants.MAX_RANKS, Constants.MAX_FILES];
+            board = new List<Piece>[Constants.MAX_RANKS, Constants.MAX_FILES];
             for (int r = 1; r <= Constants.MAX_RANKS; r++)
                 for (int f = 1; f <= Constants.MAX_FILES; f++)
-                    pieces[r-1, f-1] = new List<Piece>();
+                    board[r-1, f-1] = new List<Piece>();
             
             Update();
         }
 
-        public Player Player(PlayerColor c)
-        {
-            return players[(int)c];
-        }
-
         private void Update()
         {
-            Clear();
-
             // For each top piece:
-                // ResetProperties
-                    // Reset p.lt_sight and p.acting_tier
                 // Add to p_top
+                // Clear
+                    // Reset p.lt_sight and p.acting_tier
                 // If marshal: add to p_marshals
-                // If elevator: CalcElevators
-                    // For all elevators: for all 8 directions: CalcSightProcedure
-                        // Set p.lt_sight and p.acting_tier
+                // If elevator: add  to p_elevators
+            // For all elevators: for all 8 directions: CalcSightProcedure
+                // Set p.lt_sight and p.acting_tier
+            //For all top pieces
                 // Update moves
+            // For all hand pieces
+                // Update drops
+
+            Clear();
 
             for (int r = 1; r <= Constants.MAX_RANKS; r++)
                 for (int f = 1; f <= Constants.MAX_FILES; f++)
                 {
                     Piece p = TopPieceAt(r, f);
+
                     if (p != null)
                     {
-                        p.Clear();
-                        
                         p_top[(int)p.player.color].Add(p);
+                        p.Clear();
 
                         if (p.type == PieceType.MARSHAL)
                             p_marshals[(int)p.player.color] = p;
                         else if (p.type == PieceType.LIEUTENANT || p.type == PieceType.FORTRESS)
-                            CalcElevators(p);
-
-                        p.UpdateMovesAndAttacks();
+                            p_elevators.Add(p);
                     }
                 }
+
+            foreach (Piece elev in p_elevators)
+                ApplyElevators(elev);
             
+            UpdateOverallDrops();
+
             foreach (Player pl in players)
             {
-                foreach (Piece p in pl.p_hand)
-                {
-                    UpdateDropsFor(p);
-                }
+                foreach (Piece p in p_top[(int)pl.color])
+                    Moveset.UpdateMovesAndAttacksFor(p);
+
+                foreach (Piece h in pl.p_hand)
+                    UpdateDropsFor(h);
             }
+
+            foreach (Piece m in p_marshals)
+                UpdateInCheck(m);
         }
 
         private void Clear()
         {
             p_top = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
-            p_elevators = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
+            p_checked_by = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
+            p_elevators = new List<Piece>();
             p_marshals = new Piece[] {null, null};
+            check_status = new CheckStatus[] { CheckStatus.SAFE, CheckStatus.SAFE };
+
+            valid_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
+            valid_pawn_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
 
             p_selected = null;
         }
+
 
         public void Select(Piece p)
         {
@@ -101,15 +115,19 @@ namespace GungiRevision.Objects
         }
 
 
+        public Player Player(PlayerColor c)
+        {
+            return players[(int)c];
+        }
+        
         public List<Piece> PlayerTopPieces(Player pl)
         {
             return p_top[(int)pl.color];
         }
 
-        public void UpdateDropsFor(Piece p)
-        {
-            Location[,] drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
 
+        private void UpdateOverallDrops()
+        {
             for (int r = 1; r <= Constants.MAX_RANKS; r++)
                 for (int f = 1; f <= Constants.MAX_FILES; f++)
                 {
@@ -121,11 +139,21 @@ namespace GungiRevision.Objects
                     {
                         int stack_height = StackHeight(r, f);
                         if (stack_height < Constants.MAX_TIERS)
-                            p.AddValidDropAt(new Location(r, f, stack_height+1));
+                        {
+                            valid_drops[r-1, f-1] = new Location(r, f, stack_height+1);
+                            // Deal with pawn check drops
+                            valid_pawn_drops[r-1, f-1] = new Location(r, f, stack_height+1);
+                        }
                     }
                 }
-
-            // Deal with pawn check drops
+        }
+        
+        public void UpdateDropsFor(Piece p)
+        {
+            if (p.type == PieceType.PAWN)
+                p.SetValidDrops(valid_pawn_drops);
+            else
+                p.SetValidDrops(valid_drops);
         }
 
 
@@ -174,7 +202,7 @@ namespace GungiRevision.Objects
         }
 
         
-        private void CalcElevators(Piece e)
+        private void ApplyElevators(Piece e)
         {
             int s = (e.type == PieceType.LIEUTENANT) ? Constants.MAX_MOVES : 1;
             for (int r = -1; r <= 1; r++)
@@ -192,8 +220,6 @@ namespace GungiRevision.Objects
                 if (StackHeight(r, f) > 0)
                 {
                     Piece p = TopPieceAt(r, f);
-                    Util.PRL("indeed" + " " + e.IsFriendlyWith(p));
-                    
                     if (e.IsFriendlyWith(p))
                     {
                         if (e.type == PieceType.LIEUTENANT)
@@ -228,11 +254,11 @@ namespace GungiRevision.Objects
 
         private List<Piece> StackAt(Location l)
         {
-            return pieces[l.rank-1, l.file-1];
+            return board[l.rank-1, l.file-1];
         }
         private List<Piece> StackAt(int r, int f)
         {
-            return pieces[r-1, f-1];
+            return board[r-1, f-1];
         }
 
         public int StackHeight(Location l)
@@ -241,7 +267,35 @@ namespace GungiRevision.Objects
         }
         public int StackHeight(int r, int f)
         {
-            return pieces[r-1, f-1].Count;
+            return board[r-1, f-1].Count;
+        }
+
+
+        private void UpdateInCheck(Piece m)
+        {
+            if (m == null)
+                return;
+            
+            int marshal_index = (int)m.player.color;
+            int enemy_index = (int)Util.OtherPlayerColor(m.player.color);
+            
+            foreach (Piece p in p_top[enemy_index])
+            {
+                if (p.CanAttackTo(m.location.rank, m.location.file))
+                {
+                    p_checked_by[marshal_index].Add(p);
+                }
+            }
+
+            if (p_checked_by[marshal_index].Count > 0)
+                check_status[marshal_index] = CheckStatus.CHECK;
+            else
+                check_status[marshal_index] = CheckStatus.SAFE;
+        }
+
+        public CheckStatus Check(Player pl)
+        {
+            return check_status[(int)pl.color];
         }
 
 

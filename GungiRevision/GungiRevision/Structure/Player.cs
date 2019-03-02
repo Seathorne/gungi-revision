@@ -107,9 +107,14 @@ namespace GungiRevision.Objects
             return list;
         }
 
+        public bool HasHandPiece(PieceType pt)
+        {
+            return p_hand.Count(p => p.type == pt) > 0;
+        }
+        
         public Piece GetHandPiece(PieceType pt)
         {
-            if (p_hand.Count > 0)
+            if (HasHandPiece(pt))
                 return p_hand.Find(p => p.type == pt);
             else
                 return null;
