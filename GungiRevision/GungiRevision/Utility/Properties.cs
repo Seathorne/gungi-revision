@@ -50,6 +50,14 @@ namespace GungiRevision
         CHECK,
         CHECKMATE
     }
+
+    public enum GameState
+    {
+        START,
+        SETUP,
+        TURNS,
+        END
+    }
     
     public class Constants
     {

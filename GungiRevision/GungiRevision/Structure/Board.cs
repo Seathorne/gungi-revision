@@ -268,8 +268,8 @@ namespace GungiRevision.Objects
 
         public Piece PieceAt(Location l)
         {
-            if (StackHeight(l) > 0)
-                return StackAt(l).Last();
+            if (StackHeight(l) >= l.tier)
+                return StackAt(l)[l.tier-1];
             else
                 return null;
         }
@@ -335,21 +335,17 @@ namespace GungiRevision.Objects
                 foreach (Piece p in p_top[player_color])
                 {
                     foreach (Location l in p.valid_moves_list)
-                    {
                         if (CheckStatusAfterCloneMoveTo(m.player.color, p.location.rank, p.location.file, l.rank, l.file) == CheckStatus.SAFE)
                         {
                             Util.PRL(m.player + " can escape check by moving [" + p + "] from " + p.location + " to " + l + ".");
                             current = CheckStatus.CHECK;
                         }
-                    }
                     foreach (Location l in p.valid_attacks_list)
-                    {
                         if (CheckStatusAfterCloneMoveTo(m.player.color, p.location.rank, p.location.file, l.rank, l.file) == CheckStatus.SAFE)
                         {
                             Util.PRL(m.player + " can escape check by attacking [" + p + "] from " + p.location + " to " + l + ".");
                             current = CheckStatus.CHECK;
                         }
-                    }
                 }
             }
 

@@ -13,6 +13,8 @@ namespace GungiRevision.Objects
         public readonly PlayerColor color;
         public List<Piece> p_hand;
 
+        public bool passed, done_setup;
+
 
         // Creates a new player object, defined by its color, with reference to its board.
         public Player(Board b, PlayerColor c)
@@ -21,6 +23,9 @@ namespace GungiRevision.Objects
             color = c;
 
             p_hand = StartingHand();
+
+            passed = false;
+            done_setup = false;
         }
 
         public Player Clone(Board clone_b)
@@ -109,11 +114,11 @@ namespace GungiRevision.Objects
             return list;
         }
 
-        private bool HasHandPiece(PieceType pt)
+        public bool HasHandPiece(PieceType pt)
         {
             return p_hand.Count(p => p.type == pt) > 0;
         }
-        private bool HasNonPawnHandPiece()
+        public bool HasNonPawnHandPiece()
         {
             return p_hand.Count(p => p.type != PieceType.PAWN) > 0;
         }
@@ -138,12 +143,6 @@ namespace GungiRevision.Objects
                 return p_hand.Find(p => p.type != PieceType.PAWN);
             else
                 return null;
-        }
-
-
-        public bool IsSame(Player pl)
-        {
-            return pl.color == color && pl.board == board && pl.p_hand == p_hand;
         }
 
 
