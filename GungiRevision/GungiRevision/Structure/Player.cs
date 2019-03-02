@@ -23,14 +23,16 @@ namespace GungiRevision.Objects
             p_hand = StartingHand();
         }
 
-        public Player Clone(Board b)
+        public Player Clone(Board clone_b)
         {
-            Player pl = new Player(b, this.color);
+            Player clone_pl = new Player(clone_b, this.color);
+            
+            clone_pl.p_hand.Clear();
 
             foreach (Piece p in this.p_hand)
-                pl.p_hand.Add(p.Clone(pl));
+                clone_pl.p_hand.Add(p.Clone(clone_pl));
 
-            return pl;
+            return clone_pl;
         }
 
 
@@ -107,9 +109,13 @@ namespace GungiRevision.Objects
             return list;
         }
 
-        public bool HasHandPiece(PieceType pt)
+        private bool HasHandPiece(PieceType pt)
         {
             return p_hand.Count(p => p.type == pt) > 0;
+        }
+        private bool HasNonPawnHandPiece()
+        {
+            return p_hand.Count(p => p.type != PieceType.PAWN) > 0;
         }
         
         public Piece GetHandPiece(PieceType pt)
@@ -123,6 +129,13 @@ namespace GungiRevision.Objects
         {
             if (p_hand.Count > 0)
                 return p_hand.ElementAt(rand);
+            else
+                return null;
+        }
+        public Piece GetNonPawnHandPiece()
+        {
+            if (HasNonPawnHandPiece())
+                return p_hand.Find(p => p.type != PieceType.PAWN);
             else
                 return null;
         }

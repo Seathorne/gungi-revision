@@ -45,28 +45,9 @@ namespace GungiRevision
 
 
             Piece p1 = white.GetHandPiece(PieceType.MARSHAL);
-            board.DropTo(p1, 2, 2);
+            board.Select(p1);
 
-            Piece p2 = black.GetHandPiece(PieceType.ARCHER);
-            board.DropTo(p2, 3, 2);
-
-
-            Piece p3 = black.GetHandPiece(PieceType.MARSHAL);
-            board.DropTo(p3, 2, 6);
-
-            Util.PRL("\n\n\n\n\n");
-
-            Piece p4 = white.GetHandPiece(PieceType.ARCHER);
-            board.DropTo(p4, 3, 6);
-
-            board.Select(p2);
             board.PrintBoardSelection();
-
-            board.Select(p4);
-            board.PrintBoardSelection();
-
-            Util.PRL("WHITE CHECK: " + board.Check(white));
-            Util.PRL("BLACK CHECK: " + board.Check(black));
         }
 
         private static bool AllHashesUnique()

@@ -19,10 +19,14 @@ namespace GungiRevision.Objects
         private CheckStatus[] check_status;
 
         private Location[,] valid_drops, valid_pawn_drops;
+        public bool IS_CLONE;
 
 
         public Board()
         {
+            IS_CLONE = false;
+            p_selected = null;
+            
             players = new Player[]
             {
                 new Player(this, PlayerColor.BLACK),
@@ -35,6 +39,45 @@ namespace GungiRevision.Objects
                     board[r-1, f-1] = new List<Piece>();
             
             Update();
+        }
+
+        public Board Clone()
+        {
+            Board clone_b = new Board();
+            clone_b.IS_CLONE = true;
+
+            foreach (Player pl in players)
+                clone_b.players[(int)pl.color] = pl.Clone(clone_b);
+
+            for (int r = 1; r <= Constants.MAX_RANKS; r++)
+                for (int f = 1; f <= Constants.MAX_FILES; f++)
+                {
+                    List<Piece> stack = this.StackAt(r, f);
+                    for (int t = 1; t <= stack.Count; t++)
+                    {
+                        Piece p = stack.ElementAt(t-1);
+                        Player clone_pl = clone_b.players[(int)p.player.color];
+                        Piece clone_p = p.Clone(clone_pl);
+
+                        clone_b.board[r-1, f-1].Add(clone_p);
+                    }
+                }
+      
+            clone_b.Update();
+
+            return clone_b;
+        }
+
+        private void Clear()
+        {
+            p_top = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
+            p_checked_by = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
+            p_elevators = new List<Piece>();
+            p_marshals = new Piece[] {null, null};
+            check_status = new CheckStatus[] { CheckStatus.SAFE, CheckStatus.SAFE };
+
+            valid_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
+            valid_pawn_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
         }
 
         private void Update()
@@ -87,20 +130,6 @@ namespace GungiRevision.Objects
 
             foreach (Piece m in p_marshals)
                 UpdateInCheck(m);
-        }
-
-        private void Clear()
-        {
-            p_top = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
-            p_checked_by = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
-            p_elevators = new List<Piece>();
-            p_marshals = new Piece[] {null, null};
-            check_status = new CheckStatus[] { CheckStatus.SAFE, CheckStatus.SAFE };
-
-            valid_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
-            valid_pawn_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
-
-            p_selected = null;
         }
 
 
@@ -157,7 +186,7 @@ namespace GungiRevision.Objects
         }
 
 
-        public bool DropTo(Piece p, int r, int f)
+        public bool DropPieceTo(Piece p, int r, int f)
         {
             if (!p.CanDropTo(r, f))
                 return false;
@@ -171,7 +200,7 @@ namespace GungiRevision.Objects
             return true;
         }
 
-        public bool MoveTo(Piece p, int r, int f)
+        public bool MovePieceTo(Piece p, int r, int f)
         {
             if (!p.CanMoveTo(r, f))
                 return false;
@@ -185,7 +214,7 @@ namespace GungiRevision.Objects
             return true;
         }
 
-        public bool AttackTo(Piece p, int r, int f)
+        public bool AttackPieceTo(Piece p, int r, int f)
         {
             if (!p.CanAttackTo(r, f))
                 return false;
@@ -276,26 +305,99 @@ namespace GungiRevision.Objects
             if (m == null)
                 return;
             
-            int marshal_index = (int)m.player.color;
-            int enemy_index = (int)Util.OtherPlayerColor(m.player.color);
+            int player_color = (int)m.player.color;
+            int enemy_color = (int)Util.OtherPlayerColor(m.player.color);
+            CheckStatus current = CheckStatus.SAFE;
             
-            foreach (Piece p in p_top[enemy_index])
-            {
+            foreach (Piece p in p_top[enemy_color])
                 if (p.CanAttackTo(m.location.rank, m.location.file))
+                    p_checked_by[player_color].Add(p);
+
+            if (p_checked_by[player_color].Count > 0)
+                current = CheckStatus.CHECKMATE;
+            
+
+            if (!IS_CLONE && current == CheckStatus.CHECKMATE)
+            {
+                Piece drop_piece = m.player.GetNonPawnHandPiece();
+                if (drop_piece == null)
+                    drop_piece = m.player.GetHandPiece(PieceType.PAWN);
+                if (drop_piece != null)
+                    for (int r = 1; r <= Constants.MAX_RANKS; r++)
+                        for (int f = 1; f <= Constants.MAX_FILES; f++)
+                            if (drop_piece.CanDropTo(r, f))
+                                if (CheckStatusAfterCloneDropTo(m.player.color, drop_piece.type, r, f) == CheckStatus.SAFE)
+                                {
+                                    Util.PRL(m.player + " can escape check by dropping a piece to " + r + "-" + f + ".");
+                                    current = CheckStatus.CHECK;
+                                }
+
+                foreach (Piece p in p_top[player_color])
                 {
-                    p_checked_by[marshal_index].Add(p);
+                    foreach (Location l in p.valid_moves_list)
+                    {
+                        if (CheckStatusAfterCloneMoveTo(m.player.color, p.location.rank, p.location.file, l.rank, l.file) == CheckStatus.SAFE)
+                        {
+                            Util.PRL(m.player + " can escape check by moving [" + p + "] from " + p.location + " to " + l + ".");
+                            current = CheckStatus.CHECK;
+                        }
+                    }
+                    foreach (Location l in p.valid_attacks_list)
+                    {
+                        if (CheckStatusAfterCloneMoveTo(m.player.color, p.location.rank, p.location.file, l.rank, l.file) == CheckStatus.SAFE)
+                        {
+                            Util.PRL(m.player + " can escape check by attacking [" + p + "] from " + p.location + " to " + l + ".");
+                            current = CheckStatus.CHECK;
+                        }
+                    }
                 }
             }
 
-            if (p_checked_by[marshal_index].Count > 0)
-                check_status[marshal_index] = CheckStatus.CHECK;
-            else
-                check_status[marshal_index] = CheckStatus.SAFE;
+            check_status[player_color] = current;
         }
 
-        public CheckStatus Check(Player pl)
+        public CheckStatus CheckCheck(Player pl)
         {
             return check_status[(int)pl.color];
+        }
+
+        public CheckStatus CheckStatusAfterCloneDropTo(PlayerColor c, PieceType pt, int r, int f)
+        {
+            Board clone_board = this.Clone();
+            Player clone_player = clone_board.players[(int)c];
+            Piece clone_piece = clone_player.GetHandPiece(pt);
+
+            clone_board.DropPieceTo(clone_piece, r, f);
+            CheckStatus status = clone_board.CheckCheck(clone_player);
+
+            clone_board = null;
+            return status;
+        }
+
+        public CheckStatus CheckStatusAfterCloneMoveTo(PlayerColor c, int from_r, int from_f, int to_r, int to_f)
+        {
+            Board clone_board = this.Clone();
+            Player clone_player = clone_board.players[(int)c];
+            Piece clone_piece = clone_board.TopPieceAt(from_r, from_f);
+
+            clone_board.MovePieceTo(clone_piece, to_r, to_f);
+            CheckStatus status = clone_board.CheckCheck(clone_player);
+
+            clone_board = null;
+            return status;
+        }
+
+        private CheckStatus CheckStatusAfterCloneAttackTo(PlayerColor c, int from_r, int from_f, int to_r, int to_f)
+        {
+            Board clone_board = this.Clone();
+            Player clone_player = clone_board.players[(int)c];
+            Piece clone_piece = clone_board.TopPieceAt(from_r, from_f);
+
+            clone_board.AttackPieceTo(clone_piece, to_r, to_f);
+            CheckStatus status = clone_board.CheckCheck(clone_player);
+
+            clone_board = null;
+            return status;
         }
 
 
@@ -355,9 +457,17 @@ namespace GungiRevision.Objects
                                 str_stack += Constants.CHAR_FRIENDLY;
                         }
                     else if (drops && p_selected.CanDropTo(r, f))
+                    {
+                        for (int t = 1; t <= StackHeight(r, f); t++)
+                            str_stack += Constants.CHAR_H_SEPARATOR;
+
                         str_stack += Constants.CHAR_DROP;
+                    } 
                     else
                     {
+                        for (int t = 1; t <= StackHeight(r, f)-1; t++)
+                            str_stack += Constants.CHAR_H_SEPARATOR;
+
                         if (attacks && p_selected.CanAttackTo(r, f))
                             str_stack += Constants.CHAR_ATTACK;
                         if (moves && p_selected.CanMoveTo(r, f))

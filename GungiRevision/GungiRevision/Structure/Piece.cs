@@ -16,6 +16,7 @@ namespace GungiRevision.Objects
         public Location location;
         
         private Location[,] valid_moves, valid_attacks, valid_drops;
+        public List<Location> valid_moves_list, valid_attacks_list;
         public bool lt_sight;
         public int acting_tier;
 
@@ -32,19 +33,16 @@ namespace GungiRevision.Objects
             Clear();
         }
 
-        public Piece Clone(Player pl)
+        public Piece Clone(Player clone_pl)
         {
-            Piece p = new Piece(pl, this.type);
+            Piece clone_p = new Piece(clone_pl, this.type);
 
-            p.location = this.location;
-            p.status = this.status;
-            p.valid_moves = this.valid_moves;    // Possibly need to clone this too
-            p.valid_attacks = this.valid_attacks;    // Possibly need to clone this too
-            p.valid_drops = this.valid_drops;    // Possibly need to clone this too
-            p.lt_sight = this.lt_sight;
-            p.acting_tier = this.acting_tier;
+            clone_p.location = this.location;
+            clone_p.status = this.status;
+            clone_p.acting_tier = this.acting_tier;
+            clone_p.lt_sight = this.lt_sight;
 
-            return p;
+            return clone_p;
         }
 
 
@@ -59,6 +57,9 @@ namespace GungiRevision.Objects
             valid_moves = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
             valid_attacks = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
             valid_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
+
+            valid_moves_list = new List<Location>();
+            valid_attacks_list = new List<Location>();
         }
 
 
@@ -105,11 +106,37 @@ namespace GungiRevision.Objects
         public void AddValidMoveAt(Location m)
         {
             valid_moves[m.rank-1, m.file-1] = m;
+            valid_moves_list.Add(m);
         }
 
         public void AddValidAttackAt(Location a)
         {
             valid_attacks[a.rank-1, a.file-1] = a;
+            valid_attacks_list.Add(a);
+        }
+
+        public Location MoveAt(int r, int f)
+        {
+            if (CanMoveTo(r, f))
+                return valid_moves[r-1, f-1];
+            else
+                return null;
+        }
+
+        public Location AttackAt(int r, int f)
+        {
+            if (CanAttackTo(r, f))
+                return valid_attacks[r-1, f-1];
+            else
+                return null;
+        }
+
+        public Location DropAt(int r, int f)
+        {
+            if (CanDropTo(r, f))
+                return valid_drops[r-1, f-1];
+            else
+                return null;
         }
 
 
