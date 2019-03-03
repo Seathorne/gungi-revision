@@ -47,6 +47,7 @@
     <Compile Include="Structure\Moveset.cs" />
     <Compile Include="Structure\Piece.cs" />
     <Compile Include="Structure\Player.cs" />
+    <Compile Include="Utility\IllegalActionException.cs" />
     <Compile Include="Utility\Properties.cs" />
     <Compile Include="Structure\Location.cs" />
     <Compile Include="Utility\OutsideBoardException.cs" />

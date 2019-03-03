@@ -166,5 +166,45 @@ namespace GungiRevision.Objects
                 symbol = symbol.ToLower();
             return symbol;
         }
+
+        public string Name()
+        {
+            return Name(type);
+        }
+
+        public static string Name(PieceType pt)
+        {
+            switch (pt)
+            {
+                case PieceType.MARSHAL:
+                    return "Marshal";
+                case PieceType.SPY:
+                    return "Spy";
+                case PieceType.LIEUTENANT:
+                    return "Lt. General";
+                case PieceType.MAJOR:
+                    return "Maj. General";
+                case PieceType.GENERAL:
+                    return "General";
+                case PieceType.ARCHER:
+                    return "Archer";
+                case PieceType.KNIGHT:
+                    return "Knight";
+                case PieceType.SAMURAI:
+                    return "Samurai";
+                case PieceType.CANNON:
+                    return "Cannon";
+                case PieceType.COUNSEL:
+                    return "Counsel";
+                case PieceType.FORTRESS:
+                    return "Fortress";
+                case PieceType.MUSKETEER:
+                    return "Musketeer";
+                case PieceType.PAWN:
+                    return "Pawn";
+                default:
+                    return "Invalid";
+            }
+        }
     }
 }

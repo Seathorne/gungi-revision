@@ -1,9 +1,4 @@
-﻿using GungiRevision.Utility;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace GungiRevision
 {
@@ -13,7 +8,7 @@ namespace GungiRevision
 
         public Location(int r, int f, int t)
         {
-            if (!Util.ValidLocation(r, f, t))
+            if (!Valid(r, f, t))
             {
                 throw new OutsideBoardException(r, f, t);
             }
@@ -23,6 +18,18 @@ namespace GungiRevision
                 file = f;
                 tier = t;
             }
+        }
+
+        public static bool Valid(int r, int f, int t)
+        {
+            return r >= 1 && r <= Constants.MAX_RANKS
+                && f >= 1 && f <= Constants.MAX_FILES
+                && t >= 1 && t <= Constants.MAX_TIERS;
+        }
+        public static bool Valid(int r, int f)
+        {
+            return r >= 1 && r <= Constants.MAX_RANKS
+                && f >= 1 && f <= Constants.MAX_FILES;
         }
 
         override

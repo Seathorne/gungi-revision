@@ -11,6 +11,8 @@ namespace GungiRevision
 {
     class GameRunner
     {
+        private static bool log_output;
+        
         private static Board board;
         private static Random random;
         private static Player black, white, curr_player, prev_player;
@@ -25,6 +27,8 @@ namespace GungiRevision
 
         public static void Main(string[] args)
         {
+            log_output = true;
+            
             board = new Board();
             random = new Random();
 
@@ -58,17 +62,19 @@ namespace GungiRevision
                 case GameState.SETUP:
                     if (!curr_player.done_setup)
                     {
-                        Util.PRL("Placement Round " + turn_count + ": " +  curr_player + "'s turn.");
+                        CheckCheck();
+                        Util.L("Placement Round " + turn_count + ": " +  curr_player + "'s turn.");
                         SetupTurn();
-                        Util.PRL("\n");
+                        Util.L("");
                     }
                     SwapTurn();
                     break;
                 case GameState.TURNS:
-                    Util.PRL("Round " + turn_count + ": " +  curr_player + "'s turn.");
-                    CheckCheck();
+                    Util.L("Round " + turn_count + ": " +  curr_player + "'s turn.");
+                    if (CheckCheck() == CheckStatus.CHECKMATE)
+                        return;
                     RegularTurn();
-                    Util.PRL("\n");
+                    Util.L("");
                     SwapTurn();
                     break;
             }
@@ -93,26 +99,7 @@ namespace GungiRevision
             // Drop
             if (curr_player.HasHandPiece(PieceType.MARSHAL))
             {
-                PrintBoard();
-                sel_piece = curr_player.GetHandPiece(PieceType.MARSHAL);
-                Util.PRL("<< The marshal must be dropped first.");
-
-                while(curr_option != Option.NEXT)
-                {
-                    PrintBoardSelection();
-                    curr_option = SelectPrompt("Enter a location to drop this [" + sel_piece + "].", new List<Option> { Option.SELECT_DROP });
-
-                    if (curr_option == Option.SELECT_DROP)
-                    {
-                        board.DropPieceTo(sel_piece, sel_location.rank, sel_location.file);
-                        Util.PRL("Drop successful.");
-                        curr_option = Option.NEXT;
-                    }
-                    else
-                    {
-                        Util.PRL("Invalid command.");
-                    }
-                }
+                CheckDropMarshal();
             }
             else if (board.PlayerAllPieces(curr_player).Count < Constants.MIN_SETUP_PIECES)
             {
@@ -133,7 +120,7 @@ namespace GungiRevision
                     }
                     else
                     {
-                        Util.PRL("Invalid command.");
+                        Util.L("Invalid command.");
                     }
                 }
             }
@@ -147,13 +134,13 @@ namespace GungiRevision
 
                     if (curr_option == Option.PASS)
                     {
-                        Util.PRL(curr_player.color + " has passed their turn.");
+                        Util.L(curr_player.color + " has passed their turn.");
                         curr_player.passed = true;
                         curr_option = Option.NEXT;
                     }
                     else if (curr_option == Option.DONE)
                     {
-                        Util.PRL(curr_player.color + " has completed their placement phase.");
+                        Util.L(curr_player.color + " has completed their placement phase.");
                         curr_player.done_setup = true;
                         curr_option = Option.NEXT;
                     }
@@ -168,20 +155,20 @@ namespace GungiRevision
                     }
                     else
                     {
-                        Util.PRL("Invalid command.");
+                        Util.L("Invalid command.");
                     }
                 }
             }
             else
             {
-                Util.PRL(curr_player.color + " has completed their placement phase.");
+                Util.L(curr_player.color + " has completed their placement phase.");
                 curr_player.done_setup = true;
             }
         }
 
         private static void RegularTurn()
         {
-            if (board.PlayerTopPieces(curr_player).Count < Constants.MAX_BOARD_PIECES)
+            if (board.PlayerTopPieces(curr_player).Count < Constants.MAX_BOARD_PIECES && curr_player.p_hand.Count > 0)
             {
                 // View or select, then back, drop, move, or attack
                 while(curr_option != Option.NEXT)
@@ -205,34 +192,80 @@ namespace GungiRevision
                     }
                     else
                     {
-                        Util.PRL("Invalid command.");
+                        Util.L("Invalid command.");
+                    }
+                }
+            }
+            else
+            {
+                // View or select, then back, move, or attack
+                while(curr_option != Option.NEXT)
+                {
+                    PrintBoard();
+                    curr_option = SelectPrompt("Select a piece on the board.", new List<Option> { Option.SELECT_BOARD_PIECE });
+
+                    if (curr_option == Option.SELECT_BOARD_PIECE)
+                    {
+                        if (board.PlayerTopPieces(curr_player).Contains(sel_piece))
+                            CheckMoveOrAttackPiece();
+                        else
+                        {
+                            PrintBoardSelection();
+                            Wait();
+                        }
+                    }
+                    else
+                    {
+                        Util.L("Invalid command.");
                     }
                 }
             }
         }
 
-        private static void CheckCheck()
+        private static CheckStatus CheckCheck()
         {
-            check_status = board.CheckCheck(curr_player);
+            check_status = board.GetCheck(curr_player);
 
-            if (turn_count == 1.0)
+            if (gamestate == GameState.SETUP)
             {
-                CheckStatus other_check_status = board.CheckCheck(prev_player);
-                if (other_check_status == CheckStatus.CHECK || other_check_status == CheckStatus.CHECKMATE)
+                if (check_status == CheckStatus.CHECK || check_status == CheckStatus.CHECKMATE)
                 {
-                    Util.PRL("<< " + prev_player.color + " has been placed in check. Since it is " + curr_player.color + "'s turn, " + curr_player.color + " wins the game!");
+                    Util.L("<< " + curr_player.color + " has been placed in CHECK.");
+                }
+
+                CheckStatus prev_check_status = board.GetCheck(prev_player);
+                if (prev_check_status == CheckStatus.CHECK || prev_check_status == CheckStatus.CHECKMATE)
+                {
+                    Util.L("<< " + prev_player.color + " has been placed in CHECK.");
+                }
+            }
+            else
+            {
+                if (turn_count == 1.0)
+                {
+                    CheckStatus prev_check_status = board.GetCheck(prev_player);
+                    if (prev_check_status == CheckStatus.CHECK || prev_check_status == CheckStatus.CHECKMATE)
+                    {
+                        Util.L("<< " + prev_player.color + " has been placed in " + prev_check_status + ". Since it is " + curr_player.color + "'s turn, " + curr_player.color + " wins the game!");
+                        gamestate = GameState.END;
+                    }
+                }
+
+                if (check_status == CheckStatus.CHECK)
+                {
+                    Util.L("<< " + curr_player.color + " has been placed in CHECK.");
+                }
+                else if (check_status == CheckStatus.CHECKMATE)
+                {
+                    Util.L("<< " + curr_player.color + " has been CHECKMATED! " + prev_player.color + " wins the game!");
                     gamestate = GameState.END;
                 }
             }
-            else if (check_status == CheckStatus.CHECK)
-            {
-                Util.PRL("<< " + curr_player.color + " has been placed in check.");
-            }
-            else if (check_status == CheckStatus.CHECKMATE)
-            {
-                Util.PRL("<< " + curr_player.color + " has been checkmated! " + Util.OtherPlayerColor(curr_player.color) + " wins the game!");
-                gamestate = GameState.END;
-            }
+
+            if (gamestate == GameState.END)
+                return CheckStatus.CHECKMATE;
+            else
+                return check_status;
         }
         
         private static void SwapTurn()
@@ -246,31 +279,53 @@ namespace GungiRevision
                 return;
             }
 
-            if (curr_player == black)
-            {
-                prev_player = black;
-                curr_player = white;
-            }
-            else
-            {
-                prev_player = white;
-                curr_player = black;
-            }
-            curr_player.passed = false;
+            prev_player = curr_player == black ? black : white;
+            curr_player = curr_player == black ? white : black;
             
+            curr_player.passed = false;
             turn_count += 0.5;
         }
 
         private static void EndSetup()
         {
-            Util.PRL("<< Both players have completed their placement phases.");
-            Util.PRL("<< The game will now begin!\n\n");
+            Util.L(" Both players have completed their placement phases.");
+            Util.L("<< The game will now begin!\n\n");
 
             gamestate = GameState.TURNS;
             board.SetGameState(gamestate);
 
+            prev_player = black;
+            curr_player = white;
+            
             turn_count = 1.0;
             curr_option = Option.NULL;
+        }
+
+        private static void CheckDropMarshal()
+        {
+            PrintBoard();
+            sel_piece = curr_player.GetHandPiece(PieceType.MARSHAL);
+            Util.L("<< The Marshal must be dropped first.");
+            
+            while(curr_option != Option.NEXT)
+            {
+                PrintBoardSelection();
+                curr_option = SelectPrompt("Enter a location to drop this [" + sel_piece + "].", new List<Option> { Option.BACK, Option.SELECT_DROP });
+
+                if (curr_option == Option.BACK)
+                {
+                    log_output = !log_output;
+                }
+                else if (curr_option == Option.SELECT_DROP)
+                {
+                    board.DropPieceTo(sel_piece, sel_location.rank, sel_location.file);
+                    curr_option = Option.NEXT;
+                }
+                else
+                {
+                    Util.L("Invalid command.");
+                }
+            }
         }
 
         private static void CheckDropPiece()
@@ -284,7 +339,6 @@ namespace GungiRevision
                 if (curr_option == Option.SELECT_DROP)
                 {
                     board.DropPieceTo(sel_piece, sel_location.rank, sel_location.file);
-                    Util.PRL("Drop successful.");
                     curr_option = Option.NEXT;
                 }
             }
@@ -301,13 +355,11 @@ namespace GungiRevision
                 if (curr_option == Option.SELECT_MOVE)
                 {
                     board.MovePieceTo(sel_piece, sel_location.rank, sel_location.file);
-                    Util.PRL("Movement successful.");
                     curr_option = Option.NEXT;
                 }
                 else if (curr_option == Option.SELECT_ATTACK)
                 {
                     board.AttackPieceTo(sel_piece, sel_location.rank, sel_location.file);
-                    Util.PRL("Capture successful.");
                     curr_option = Option.NEXT;
                 }
             }
@@ -317,21 +369,23 @@ namespace GungiRevision
         {
             Option op = Option.NULL;
 
-            Util.PRL(prompt);
-            Util.Pr(">> ");
+            Util.L(prompt);
+            Util.P(">> ");
             String choice = Console.ReadLine().Trim().ToLower();
 
-            if (options.Contains(Option.BACK) && choice == "back")
+            if (options.Contains(Option.BACK) && (Regex.IsMatch(choice, @"back") || Regex.IsMatch(choice, @"\.")) )
             {
                 op = Option.BACK;
             }
-            else if (options.Contains(Option.PASS) && choice == "pass")
+            else if (options.Contains(Option.PASS) && Regex.IsMatch(choice, @"pass"))
             {
                 op = Option.PASS;
+                LogDrop(Option.PASS);
             }
-            else if (options.Contains(Option.DONE) && choice == "done")
+            else if (options.Contains(Option.DONE) && Regex.IsMatch(choice, @"done"))
             {
                 op = Option.DONE;
+                LogDrop(Option.DONE);
             }
             else if (options.Contains(Option.SELECT_HAND_PIECE) && SelectHandPiece(choice))
             {
@@ -340,6 +394,7 @@ namespace GungiRevision
             }
             else if (options.Contains(Option.SELECT_BOARD_PIECE) && SelectLocation(choice, Option.SELECT_BOARD_PIECE))
             {
+                // sel_location set in method
                 sel_piece = board.PieceAt(sel_location);
                 op = Option.SELECT_BOARD_PIECE;
             }
@@ -347,16 +402,19 @@ namespace GungiRevision
             {
                 // sel_location set in method
                 op = Option.SELECT_DROP;
+                LogDrop(Option.SELECT_DROP);
             }
             else if(options.Contains(Option.SELECT_MOVE) && SelectLocation(choice, Option.SELECT_MOVE))
             {
                 // sel_location set in method
                 op = Option.SELECT_MOVE;
+                LogDrop(Option.SELECT_MOVE);
             }
             else if(options.Contains(Option.SELECT_ATTACK) && SelectLocation(choice, Option.SELECT_ATTACK))
             {
                 // sel_location set in method
                 op = Option.SELECT_ATTACK;
+                LogDrop(Option.SELECT_ATTACK);
             }
             else
             {
@@ -369,18 +427,18 @@ namespace GungiRevision
             return op;
         }
 
-        private static bool SelectHandPiece(string piece_char)
+        private static bool SelectHandPiece(string choice)
         {
             sel_piece = null;
 
-            if (piece_char.ToLower() == "x")
+            if (Regex.IsMatch(choice.ToLower(), @"^x"))
             {
                 int x = random.Next(0, curr_player.p_hand.Count());
                 sel_piece = curr_player.p_hand.ElementAt(x);
             }
-            else if (piece_char.Length == 1)
+            else if (Regex.IsMatch(choice.ToLower(), @"^\w"))
             {
-                PieceType type = (PieceType)piece_char.ToUpper()[0];
+                PieceType type = (PieceType)choice.ToUpper()[0];
                 sel_piece = curr_player.GetHandPiece(type);
             }
 
@@ -390,10 +448,9 @@ namespace GungiRevision
         private static bool SelectLocation(string rft, Option location_type)
         {
             sel_location = null;
-            bool valid_location_option = false;
             MatchCollection matches = Regex.Matches(rft, @"(\d)+");
 
-            if (Regex.IsMatch(rft.ToLower(), @"x") && location_type == Option.SELECT_DROP)
+            if (Regex.IsMatch(rft.ToLower(), @"^x") && location_type == Option.SELECT_DROP)
             {
                 int xr, xf;
                 do
@@ -409,90 +466,110 @@ namespace GungiRevision
                 int r = Convert.ToInt32(matches[0].Value);
                 int f = Convert.ToInt32(matches[1].Value);
 
-                if (matches.Count == 2 && Util.ValidLocation(r, f))
-                {
-                    if (location_type == Option.SELECT_DROP)
-                    {
-                        if (board.StackHeight(r, f) < Constants.MAX_TIERS)
-                            sel_location = new Location(r, f, board.StackHeight(r, f)+1);
-                    }
-                    else if (location_type == Option.SELECT_BOARD_PIECE)
-                    {
-                        Piece top = board.TopPieceAt(r, f);
-                        if (top != null)
-                            sel_location = top.location;
-                    }
-                    else if (location_type == Option.SELECT_MOVE && Regex.IsMatch(rft, @"m"))
-                    {
-                        if (board.StackHeight(r, f) < Constants.MAX_TIERS)
-                            sel_location = new Location(r, f, board.StackHeight(r, f)+1);
-                    }
-                    else if (location_type == Option.SELECT_ATTACK && Regex.IsMatch(rft, @"a"))
-                    {
-                        Piece top = board.TopPieceAt(r, f);
-                        if (top != null)
-                            sel_location = top.location;
-                    }
-                }
-                else if (matches.Count >= 3)
+                if (matches.Count >= 3)
                 {
                     int t = Convert.ToInt32(matches[2].Value);
-                    if (Util.ValidLocation(r, f, t))
-                        sel_location = new Location(r, f, t);
+                    if (Location.Valid(r, f, t))
+                    {
+                        Location loc = new Location(r, f, t);
+
+                        if ( (location_type == Option.SELECT_BOARD_PIECE && board.PieceAt(loc) != null)
+                            || (location_type == Option.SELECT_DROP && sel_piece.CanDropTo(loc))
+                            || (location_type == Option.SELECT_MOVE && sel_piece.CanMoveTo(loc))
+                            || (location_type == Option.SELECT_ATTACK && sel_piece.CanAttackTo(loc)) )
+                        {
+                            sel_location = loc;
+                        }
+                    }
+                }
+                else if (Location.Valid(r, f))
+                {
+                    if (location_type == Option.SELECT_BOARD_PIECE)
+                    {
+                        Piece top = board.TopPieceAt(r, f);
+                        if (top != null)
+                            sel_location = top.location;
+                    }
+                    else if (location_type == Option.SELECT_DROP && sel_piece.CanDropTo(r, f))
+                    {
+                        sel_location = sel_piece.GetDropAt(r, f);
+                    }
+                    else if (location_type == Option.SELECT_MOVE && sel_piece.CanMoveTo(r, f) && (!sel_piece.CanAttackTo(r, f) || Regex.IsMatch(rft, @"m")) )
+                    {
+                        sel_location = sel_piece.GetMoveAt(r, f);
+                    }
+                    else if (location_type == Option.SELECT_ATTACK && sel_piece.CanAttackTo(r, f) && (!sel_piece.CanMoveTo(r, f) || Regex.IsMatch(rft, @"a")) )
+                    {
+                        sel_location = sel_piece.GetAttackAt(r, f);
+                    }
                 }
             }
 
-            if (sel_location != null)
+            if (sel_location != null && gamestate != GameState.SETUP)
             {
                 switch (location_type)
                 {
                     case Option.SELECT_DROP:
-                        valid_location_option = sel_piece.CanDropTo(sel_location);
-                        if (valid_location_option && check_status == CheckStatus.CHECK)
-                            if (board.CheckStatusAfterCloneDropTo(curr_player.color, sel_piece.type, sel_location.rank, sel_location.file) != CheckStatus.SAFE)
-                            {
-                                valid_location_option = false;
-                                Util.PRL("This drop leaves " + curr_player + " in check.");
-                            }
+                        if (board.CheckStatusAfterCloneDropTo(curr_player.color, sel_piece.type, sel_location.rank, sel_location.file) != CheckStatus.SAFE)
+                        {
+                            sel_location = null;
+                            Util.L("Invalid drop: leaves " + curr_player + " in check.\n");
+                        }
                         break;
                     case Option.SELECT_MOVE:
-                        valid_location_option = sel_piece.CanMoveTo(sel_location);
-                        if (valid_location_option)
-                            if (board.CheckStatusAfterCloneMoveTo(curr_player.color, sel_piece.location.rank, sel_piece.location.file, sel_location.rank, sel_location.file) != CheckStatus.SAFE)
-                            {
-                                valid_location_option = false;
-                                Util.PRL("This move leaves " + curr_player + " in check.");
-                            }
+                        if (board.CheckStatusAfterCloneMoveTo(curr_player.color, sel_piece.location.rank, sel_piece.location.file, sel_location.rank, sel_location.file) != CheckStatus.SAFE)
+                        {
+                            sel_location = null;
+                            Util.L("Invalid move: leaves " + curr_player + " in check.\n");
+                        }
                         break;
                     case Option.SELECT_ATTACK:
-                        valid_location_option = sel_piece.CanAttackTo(sel_location);
-                        if (valid_location_option)
-                            if (board.CheckStatusAfterCloneAttackTo(curr_player.color, sel_piece.location.rank, sel_piece.location.file, sel_location.rank, sel_location.file) != CheckStatus.SAFE)
-                            {
-                                valid_location_option = false;
-                                Util.PRL("This capture leaves " + curr_player + " in check.");
-                            }
-                        break;
-                    case Option.SELECT_BOARD_PIECE:
-                        valid_location_option = board.PieceAt(sel_location) != null;
-                        break;
-                    default:
-                        valid_location_option = false;
+                        if (board.CheckStatusAfterCloneAttackTo(curr_player.color, sel_piece.location.rank, sel_piece.location.file, sel_location.rank, sel_location.file) != CheckStatus.SAFE)
+                        {
+                            sel_location = null;
+                            Util.L("Invalid capture: leaves " + curr_player + " in check.\n");
+                        }
                         break;
                 }
             }
 
-            if (!valid_location_option)
-                sel_location = null;
+            return sel_location != null;
+        }
 
-            return valid_location_option;
+        private static void LogDrop(Option op)
+        {
+            if (log_output)
+            {
+                string turn = "";
+                if (turn_count == 1 || turn_count%5 == 0)
+                    turn = " #" + (int)turn_count;
+
+                switch (op)
+                {
+                    case Option.PASS:
+                        Util.Log("pass" + turn);
+                        break;
+                    case Option.DONE:
+                        Util.Log("done" + turn);
+                        break;
+                    case Option.SELECT_DROP:
+                        Util.Log(sel_piece + turn);
+                        Util.Log(sel_location);
+                        break;
+                    case Option.SELECT_MOVE:
+                    case Option.SELECT_ATTACK:
+                        Util.Log(sel_piece.location + turn);
+                        Util.Log(sel_location);
+                        break;
+                }
+            }
         }
 
         private static void Wait()
         {
-            Util.PRL("Press a key to continue.");
+            Util.L("Press a key to continue.");
             Console.ReadKey(true);
-            Util.PRL("");
+            Util.L("");
         }
 
 

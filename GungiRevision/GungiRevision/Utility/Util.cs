@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,80 +9,25 @@ namespace GungiRevision.Utility
 {
     class Util
     {
-        private static string input_thus_far;
+        private static readonly string f_log_name = "W:/Documents/Programming/gungi-revision/Logs/" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-ffff") + ".txt";
 
-
-        public static void Pr<T>(T o)
+        public static void P<T>(T o)
         {
             Console.Write(o.ToString());
         }
-        public static void PRL<T>(T o)
+        public static void L<T>(T o)
         {
             Console.WriteLine(o.ToString());
         }
 
-        public static void LogInput(string input)
+        public static void Log<T>(T input)
         {
-            input_thus_far += input;
-        }
+            FileStream f_log = new FileStream(f_log_name, FileMode.Append, FileAccess.Write);
+            StreamWriter log_writer = new StreamWriter(f_log);
 
-        public static void PrintInputThusFar()
-        {
-            PRL(input_thus_far);
-        }
+            log_writer.WriteLine(input.ToString());
 
-        public static string PieceName(PieceType pt)
-        {
-            switch (pt)
-            {
-                case PieceType.MARSHAL:
-                    return "Marshal";
-                case PieceType.SPY:
-                    return "Spy";
-                case PieceType.LIEUTENANT:
-                    return "Lt. General";
-                case PieceType.MAJOR:
-                    return "Maj. General";
-                case PieceType.GENERAL:
-                    return "General";
-                case PieceType.ARCHER:
-                    return "Archer";
-                case PieceType.KNIGHT:
-                    return "Knight";
-                case PieceType.SAMURAI:
-                    return "Samurai";
-                case PieceType.CANNON:
-                    return "Cannon";
-                case PieceType.COUNSEL:
-                    return "Counsel";
-                case PieceType.FORTRESS:
-                    return "Fortress";
-                case PieceType.MUSKETEER:
-                    return "Musketeer";
-                case PieceType.PAWN:
-                    return "Pawn";
-                default:
-                    return "Invalid";
-            }
-        }
-
-
-        public static bool ValidLocation(int r, int f, int t)
-        {
-            return r >= 1 && r <= Constants.MAX_RANKS
-                && f >= 1 && f <= Constants.MAX_FILES
-                && t >= 1 && t <= Constants.MAX_TIERS;
-        }
-        public static bool ValidLocation(int r, int f)
-        {
-            return r >= 1 && r <= Constants.MAX_RANKS
-                && f >= 1 && f <= Constants.MAX_FILES;
-        }
-
-
-        public static PlayerColor OtherPlayerColor(PlayerColor c)
-        {
-            return (c == PlayerColor.BLACK) ? PlayerColor.WHITE : PlayerColor.BLACK;
+            log_writer.Close();
         }
 
 
@@ -98,7 +44,7 @@ namespace GungiRevision.Utility
                     if (hash_list[i] == hash_list[j])
                     {
                         hashes_unique = false;
-                        PRL("Hashes not unique: " + o_list[i] + " and " + o_list[j] + " are equal to " + hash_list[i] + ".");
+                        L("Hashes not unique: " + o_list[i] + " and " + o_list[j] + " are equal to " + hash_list[i] + ".");
                     }
             
             return hashes_unique;

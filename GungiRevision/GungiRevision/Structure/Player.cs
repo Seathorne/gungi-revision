@@ -10,7 +10,8 @@ namespace GungiRevision.Objects
     class Player
     {
         public readonly Board board;
-        public readonly PlayerColor color;
+        public readonly PlayerColor color, enemy_color;
+        public readonly int index, enemy_index;
         public List<Piece> p_hand;
 
         public bool passed, done_setup;
@@ -21,6 +22,9 @@ namespace GungiRevision.Objects
         {
             board = b;
             color = c;
+            enemy_color = color == PlayerColor.BLACK ? PlayerColor.WHITE : PlayerColor.BLACK;
+            index = (int)color;
+            enemy_index = (int)enemy_color;
 
             p_hand = StartingHand();
 
@@ -176,7 +180,7 @@ namespace GungiRevision.Objects
 
             HandToLegend();
 
-            Util.PRL(str);
+            Util.L(str);
         }
 
         public string[] HandToLegend()
@@ -189,7 +193,7 @@ namespace GungiRevision.Objects
 
             for (int i = 0; i < dict.Count; i++)
             {
-                string piece_name = Util.PieceName((PieceType)dict.ElementAt(i).Key.ToUpper()[0]);
+                string piece_name = Piece.Name((PieceType)dict.ElementAt(i).Key.ToUpper()[0]);
                 string str = " [" + dict.ElementAt(i).Value + "] " + dict.ElementAt(i).Key.ToUpper() + dict.ElementAt(i).Key.ToLower() + " = " + piece_name;
                 legend[i+1] = str;
             }

@@ -181,7 +181,7 @@ namespace GungiRevision.Objects
             }
             bool jumped = false;
 
-            while (Util.ValidLocation(r, f) && steps > 0)
+            while (Location.Valid(r, f) && steps > 0)
             {
                 int stack_height = piece.board.StackHeight(r, f);
 
