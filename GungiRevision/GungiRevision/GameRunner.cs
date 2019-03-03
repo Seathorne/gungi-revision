@@ -273,7 +273,7 @@ namespace GungiRevision
             sel_piece = null;
             sel_location = null;
 
-            if (gamestate == GameState.SETUP && (prev_player.done_setup || prev_player.passed) && (curr_player.done_setup || curr_player.passed) )
+            if (gamestate == GameState.SETUP && (turn_count >= 27 || ((prev_player.done_setup || prev_player.passed) && (curr_player.done_setup || curr_player.passed))) )
             {
                 EndSetup();
                 return;
