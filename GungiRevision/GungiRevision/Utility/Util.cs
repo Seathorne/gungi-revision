@@ -9,7 +9,7 @@ namespace GungiRevision.Utility
 {
     class Util
     {
-        private static readonly string f_log_name = "W:/Documents/Programming/gungi-revision/Logs/" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-ffff") + ".txt";
+        private static readonly string f_log_name = "W:/Documents/Programming/Logs/" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss-ffff") + ".txt";
 
         public static void P<T>(T o)
         {

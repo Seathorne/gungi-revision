@@ -485,7 +485,7 @@ namespace GungiRevision.Objects
         public void PrintBoardAndHand(Player pl)
         {
             Util.L("");
-            PrintBoard(0, pl.HandToLegend(), false, false, false);
+            PrintBoard(pl.color, pl.HandToLegend(), false, false, false);
         }
         public void PrintBoardSelection(Player pl)
         {
@@ -506,6 +506,14 @@ namespace GungiRevision.Objects
             int legend_i = 0;
             string str = "";
 
+            bool print_checked = false;
+            if (check_status[(int)c] == CheckStatus.CHECK || check_status[(int)c] == CheckStatus.CHECKMATE)
+            {
+                
+                p_selected = p_marshals[(int)c];
+                print_checked = true;
+            }
+
             for (int f = 1; f <= (Constants.MAX_TIERS/2)+3; f++)
                 str += " ";
             for (int f = 1; f <= Constants.MAX_FILES; f++)
@@ -523,6 +531,19 @@ namespace GungiRevision.Objects
                 {
                     string str_stack = "";
 
+                    if ( (print_checked || moves || attacks) && p_selected != null && r == p_selected.location.rank && f == p_selected.location.file)
+                    {
+                        for (int t = 1; t < p_selected.location.tier; t++)
+                            str_stack += Constants.CHAR_H_SEPARATOR;
+                        str_stack += Constants.CHAR_SELECTED;
+                    }
+                    else if (print_checked && TopPieceAt(r, f) != null && p_checked_by[p_selected.player.index].Contains(TopPieceAt(r, f)))
+                    {
+                        for (int t = 1; t < StackHeight(r, f); t++)
+                            str_stack += Constants.CHAR_H_SEPARATOR;
+                        str_stack += Constants.CHAR_ATTACK;
+                    }
+
                     if (drops && p_selected.CanDropTo(r, f))
                     {
                         for (int t = 1; t <= StackHeight(r, f); t++)
@@ -532,26 +553,17 @@ namespace GungiRevision.Objects
                     } 
                     else if (moves || attacks)
                     {
-                        if (p_selected != null && r == p_selected.location.rank && f == p_selected.location.file)
-                        {
-                            for (int t = 1; t < p_selected.location.tier; t++)
-                                str_stack += Constants.CHAR_H_SEPARATOR;
-                            str_stack += Constants.CHAR_SELECTED;
-                        }
-                        else
-                        {
-                            for (int t = 1; t < StackHeight(r, f); t++)
-                                str_stack += Constants.CHAR_H_SEPARATOR;
+                        for (int t = 1; t < StackHeight(r, f); t++)
+                            str_stack += Constants.CHAR_H_SEPARATOR;
 
-                            if (attacks && p_selected.CanAttackTo(r, f))
-                                str_stack += Constants.CHAR_ATTACK;
+                        if (attacks && p_selected.CanAttackTo(r, f))
+                            str_stack += Constants.CHAR_ATTACK;
                             
-                            for (int t = str_stack.Length; t < StackHeight(r, f); t++)
-                                str_stack += Constants.CHAR_H_SEPARATOR;
+                        for (int t = str_stack.Length; t < StackHeight(r, f); t++)
+                            str_stack += Constants.CHAR_H_SEPARATOR;
 
-                            if (moves && p_selected.CanMoveTo(r, f))
-                                str_stack += Constants.CHAR_MOVE;
-                        }
+                        if (moves && p_selected.CanMoveTo(r, f))
+                            str_stack += Constants.CHAR_MOVE;
                     }
 
                     for (int t = str_stack.Length+1; t <= Constants.MAX_TIERS; t++)
