@@ -29,7 +29,7 @@ namespace GungiRevision.Objects
                     AddStraightMove(1,  1,1,1,0,1, MoveType.BLOCKABLE);
                     AddStraightMove(2,  1,1,1,1,1, MoveType.BLOCKABLE);
                     AddStraightMove(3,  2,1,1,1,1, MoveType.BLOCKABLE);
-                    AddBentMove(3,  2,0,0,0, MoveType.BLOCKABLE);
+                    AddBentMove(3,  2,0,0,0, 1, MoveType.BLOCKABLE);
                     break;
                 case PieceType.MAJOR:
                     AddStraightMove(1,  1,1,0,1,0, MoveType.BLOCKABLE);
@@ -42,16 +42,19 @@ namespace GungiRevision.Objects
                     AddStraightMove(3,  1,1,1,0,1, MoveType.BLOCKABLE);
                     break;
                 case PieceType.ARCHER:
-                    AddStraightMove(1,  1,1,1,1,1, MoveType.BLOCKABLE);
+                    AddStraightMove(1,  1,1,1,1,1, MoveType.TELEPORTABLE);
                     AddStraightMove(2,  2,2,2,2,2, MoveType.TELEPORTABLE);
+                    AddBentMove(2,  2,2,2,2, 1, MoveType.TELEPORTABLE);
                     AddStraightMove(3,  3,3,3,3,3, MoveType.TELEPORTABLE);
+                    AddBentMove(3,  3,3,3,3, 1, MoveType.TELEPORTABLE);
+                    AddBentMove(3,  3,3,3,3, 2, MoveType.TELEPORTABLE);
                     break;
                 case PieceType.KNIGHT:
-                    AddStraightMove(1,  1,0,1,0,0, MoveType.BLOCKABLE);
-                    AddStraightMove(2,  0,1,0,1,0, MoveType.BLOCKABLE);
-                    AddBentMove(1,  2,0,0,0, MoveType.TELEPORTABLE);
-                    AddBentMove(2,  2,2,0,0, MoveType.TELEPORTABLE);
-                    AddBentMove(3,  2,2,2,2, MoveType.TELEPORTABLE);
+                    AddStraightMove(1,  1,0,1,0,0, MoveType.TELEPORTABLE);
+                    AddStraightMove(2,  0,1,0,1,0, MoveType.TELEPORTABLE);
+                    AddBentMove(1,  2,0,0,0, 1, MoveType.TELEPORTABLE);
+                    AddBentMove(2,  2,2,0,0, 1, MoveType.TELEPORTABLE);
+                    AddBentMove(3,  2,2,2,2, 1, MoveType.TELEPORTABLE);
                     break;
                 case PieceType.SAMURAI:
                     AddStraightMove(1,  0,1,0,1,0, MoveType.TELEPORTABLE);
@@ -97,7 +100,7 @@ namespace GungiRevision.Objects
                 MakeStraightMoves(up, updiag, side, downdiag, down, mt);
         }
 
-        private static void AddBentMove(int t,  int up_updiag, int side_updiag, int side_downdiag, int down_downdiag, MoveType mt)
+        private static void AddBentMove(int t,  int up_updiag, int side_updiag, int side_downdiag, int down_downdiag, int num_diag, MoveType mt)
         {
             if (piece.player.color == PlayerColor.BLACK)
             {
@@ -107,7 +110,7 @@ namespace GungiRevision.Objects
             }
             
             if (t == piece.acting_tier || t == 0 || piece.lt_sight)
-                MakeBentMoves(up_updiag, side_updiag, side_downdiag, down_downdiag, mt);
+                MakeBentMoves(up_updiag, side_updiag, side_downdiag, down_downdiag, num_diag, mt);
         }
 
         private static void MakeStraightMoves(int up, int updiag, int side, int downdiag, int down, MoveType mt)
@@ -135,29 +138,29 @@ namespace GungiRevision.Objects
                 SightProcedure(down, 0, location, -1, 0, mt);
         }
 
-        private static void MakeBentMoves(int up_updiag, int side_updiag, int side_downdiag, int down_downdiag, MoveType mt)
+        private static void MakeBentMoves(int up_updiag, int side_updiag, int side_downdiag, int down_downdiag, int num_diag, MoveType mt)
         {
             Location location = piece.location;
 
             if (up_updiag > 1)
             {
-                SightProcedure(up_updiag, up_updiag-1, location, 1, 1, mt);
-                SightProcedure(up_updiag, up_updiag-1, location, 1, -1, mt);
+                SightProcedure(up_updiag, up_updiag-num_diag, location, 1, 1, mt);
+                SightProcedure(up_updiag, up_updiag-num_diag, location, 1, -1, mt);
             }
             if (side_updiag > 1)
             {
-                SightProcedure(side_updiag-1, side_updiag, location, 1, 1, mt);
-                SightProcedure(side_updiag-1, side_updiag, location, 1, -1, mt);
+                SightProcedure(side_updiag-num_diag, side_updiag, location, 1, 1, mt);
+                SightProcedure(side_updiag-num_diag, side_updiag, location, 1, -1, mt);
             }
             if (side_downdiag > 1)
             {
-                SightProcedure(side_downdiag-1, side_downdiag, location, -1, 1, mt);
-                SightProcedure(side_downdiag-1, side_downdiag, location, -1, -1, mt);
+                SightProcedure(side_downdiag-num_diag, side_downdiag, location, -1, 1, mt);
+                SightProcedure(side_downdiag-num_diag, side_downdiag, location, -1, -1, mt);
             }
             if (down_downdiag > 1)
             {
-                SightProcedure(down_downdiag, down_downdiag-1, location, -1, 1, mt);
-                SightProcedure(down_downdiag, down_downdiag-1, location, -1, -1, mt);
+                SightProcedure(down_downdiag, down_downdiag-num_diag, location, -1, 1, mt);
+                SightProcedure(down_downdiag, down_downdiag-num_diag, location, -1, -1, mt);
             }
         }
 
@@ -182,16 +185,15 @@ namespace GungiRevision.Objects
             {
                 int stack_height = piece.board.StackHeight(r, f);
 
-                if (stack_height < Constants.MAX_TIERS && (mt != MoveType.JUMP_ATTACK || jumped) )
+                if (stack_height < Constants.MAX_TIERS && mt != MoveType.JUMP_ATTACK && !piece.board.ContainsMarshal(r, f))
                 {
                     Location l_move = new Location(r, f, stack_height+1);
-                    if (mt != MoveType.JUMP_ATTACK)
-                        piece.AddValidMoveAt(l_move);
+                    piece.AddValidMoveAt(l_move);
                 }
 
                 if (stack_height > 0)
                 {
-                    if (!piece.IsFriendlyWith(piece.board.TopPieceAt(r, f)) && mt != MoveType.BLOCKABLE_PACIFIST)
+                    if (!piece.IsFriendlyWith(piece.board.TopPieceAt(r, f)) && mt != MoveType.BLOCKABLE_PACIFIST && (mt != MoveType.JUMP_ATTACK || jumped) )
                     {
                         Location l_attack = new Location(r, f, stack_height);
                         piece.AddValidAttackAt(l_attack);

@@ -155,6 +155,7 @@ namespace GungiRevision.Objects
         public void SetGameState(GameState gs)
         {
             gamestate = gs;
+            Update();
         }
 
 
@@ -179,11 +180,7 @@ namespace GungiRevision.Objects
             for (int r = 1; r <= Constants.MAX_RANKS; r++)
                 for (int f = 1; f <= Constants.MAX_FILES; f++)
                 {
-                    bool has_marshal = false;
-                    foreach (Piece m in p_marshals)
-                        has_marshal |= StackAt(r, f).Contains(m);
-                    
-                    if (!has_marshal)
+                    if (!ContainsMarshal(r, f))
                     {
                         int stack_height = StackHeight(r, f);
                         if (stack_height < Constants.MAX_TIERS)
@@ -206,7 +203,10 @@ namespace GungiRevision.Objects
                                         && f >= p_marshals[(int)pl.color].location.file-1 && f <= p_marshals[(int)pl.color].location.file + 1)
                                     {
                                         if (CheckedByPawnDrop(pl.color, r, f))
+                                        {
                                             valid_pawn_drops[(int)Util.OtherPlayerColor(pl.color)][r-1, f-1] = null;
+                                            Util.PRL("null pawn drop at " + r + " " + f);
+                                        }
                                     }
                                 }
                             }
@@ -223,6 +223,14 @@ namespace GungiRevision.Objects
                 p.SetValidDrops(valid_pawn_drops[(int)p.player.color]);
             else
                 p.SetValidDrops(valid_drops[(int)p.player.color]);
+        }
+
+        public bool ContainsMarshal(int r, int f)
+        {
+            foreach (Piece m in p_marshals)
+                if(StackAt(r, f).Contains(m))
+                    return true;
+            return false;
         }
 
 
@@ -262,6 +270,8 @@ namespace GungiRevision.Objects
             Piece e = StackAt(r, f).Last();
             StackAt(r, f).Remove(e);
             e.Kill();
+
+            StackAt(p.location.rank, p.location.file).Remove(p);
 
             StackAt(r, f).Add(p);
             p.MoveTo(new Location(r, f, StackHeight(r, f)));

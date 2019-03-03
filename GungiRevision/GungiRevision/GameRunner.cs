@@ -220,13 +220,13 @@ namespace GungiRevision
                 CheckStatus other_check_status = board.CheckCheck(prev_player);
                 if (other_check_status == CheckStatus.CHECK || other_check_status == CheckStatus.CHECKMATE)
                 {
-                    Util.PRL("<< " + prev_player.color + " has been placed in check. Since it is " + curr_player.color + "' turn, " + curr_player.color + " wins the game!");
+                    Util.PRL("<< " + prev_player.color + " has been placed in check. Since it is " + curr_player.color + "'s turn, " + curr_player.color + " wins the game!");
                     gamestate = GameState.END;
                 }
             }
             else if (check_status == CheckStatus.CHECK)
             {
-                Util.PRL("<< " + curr_player.color + " has been placed in check. They must escape from check during this turn.");
+                Util.PRL("<< " + curr_player.color + " has been placed in check.");
             }
             else if (check_status == CheckStatus.CHECKMATE)
             {
@@ -422,12 +422,12 @@ namespace GungiRevision
                         if (top != null)
                             sel_location = top.location;
                     }
-                    else if (location_type == Option.SELECT_MOVE && Regex.IsMatch(rft, @"move"))
+                    else if (location_type == Option.SELECT_MOVE && Regex.IsMatch(rft, @"m"))
                     {
                         if (board.StackHeight(r, f) < Constants.MAX_TIERS)
                             sel_location = new Location(r, f, board.StackHeight(r, f)+1);
                     }
-                    else if (location_type == Option.SELECT_ATTACK && Regex.IsMatch(rft, @"attack"))
+                    else if (location_type == Option.SELECT_ATTACK && Regex.IsMatch(rft, @"a"))
                     {
                         Piece top = board.TopPieceAt(r, f);
                         if (top != null)
@@ -452,25 +452,25 @@ namespace GungiRevision
                             if (board.CheckStatusAfterCloneDropTo(curr_player.color, sel_piece.type, sel_location.rank, sel_location.file) != CheckStatus.SAFE)
                             {
                                 valid_location_option = false;
-                                Util.PRL("This drop does not escape check.");
+                                Util.PRL("This drop leaves " + curr_player + " in check.");
                             }
                         break;
                     case Option.SELECT_MOVE:
                         valid_location_option = sel_piece.CanMoveTo(sel_location);
-                        if (valid_location_option && check_status == CheckStatus.CHECK)
+                        if (valid_location_option)
                             if (board.CheckStatusAfterCloneMoveTo(curr_player.color, sel_piece.location.rank, sel_piece.location.file, sel_location.rank, sel_location.file) != CheckStatus.SAFE)
                             {
                                 valid_location_option = false;
-                                Util.PRL("This move does not escape check.");
+                                Util.PRL("This move leaves " + curr_player + " in check.");
                             }
                         break;
                     case Option.SELECT_ATTACK:
                         valid_location_option = sel_piece.CanAttackTo(sel_location);
-                        if (valid_location_option && check_status == CheckStatus.CHECK)
+                        if (valid_location_option)
                             if (board.CheckStatusAfterCloneAttackTo(curr_player.color, sel_piece.location.rank, sel_piece.location.file, sel_location.rank, sel_location.file) != CheckStatus.SAFE)
                             {
                                 valid_location_option = false;
-                                Util.PRL("This capture does not escape check.");
+                                Util.PRL("This capture leaves " + curr_player + " in check.");
                             }
                         break;
                     case Option.SELECT_BOARD_PIECE:
