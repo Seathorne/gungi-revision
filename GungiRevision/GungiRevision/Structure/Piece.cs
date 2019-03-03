@@ -83,16 +83,28 @@ namespace GungiRevision.Objects
             location = null;
         }
 
+        public bool CanDropTo(Location l)
+        {
+            return valid_drops[l.rank-1, l.file-1] != null && valid_drops[l.rank-1, l.file-1].Equals(l);
+        }
         public bool CanDropTo(int r, int f)
         {
             return valid_drops[r-1, f-1] != null;
         }
 
+        public bool CanMoveTo(Location l)
+        {
+            return valid_moves[l.rank-1, l.file-1] != null && valid_moves[l.rank-1, l.file-1].Equals(l);
+        }
         public bool CanMoveTo(int r, int f)
         {
             return valid_moves[r-1, f-1] != null;
         }
 
+        public bool CanAttackTo(Location l)
+        {
+            return valid_attacks[l.rank-1, l.file-1] != null && valid_attacks[l.rank-1, l.file-1].Equals(l);
+        }
         public bool CanAttackTo(int r, int f)
         {
             return valid_attacks[r-1, f-1] != null;
@@ -115,7 +127,7 @@ namespace GungiRevision.Objects
             valid_attacks_list.Add(a);
         }
 
-        public Location MoveAt(int r, int f)
+        public Location GetMoveAt(int r, int f)
         {
             if (CanMoveTo(r, f))
                 return valid_moves[r-1, f-1];
@@ -123,7 +135,7 @@ namespace GungiRevision.Objects
                 return null;
         }
 
-        public Location AttackAt(int r, int f)
+        public Location GetAttackAt(int r, int f)
         {
             if (CanAttackTo(r, f))
                 return valid_attacks[r-1, f-1];
@@ -131,7 +143,7 @@ namespace GungiRevision.Objects
                 return null;
         }
 
-        public Location DropAt(int r, int f)
+        public Location GetDropAt(int r, int f)
         {
             if (CanDropTo(r, f))
                 return valid_drops[r-1, f-1];

@@ -12,13 +12,14 @@ namespace GungiRevision.Objects
         private readonly Player[] players;
         private readonly List<Piece>[,] board;
 
-        private List<Piece>[] p_top, p_checked_by;
+        private List<Piece>[] p_all, p_top, p_checked_by;
         private List<Piece> p_elevators;
         private Piece[] p_marshals;
         private Piece p_selected;
         private CheckStatus[] check_status;
+        private GameState gamestate;
 
-        private Location[,] valid_drops, valid_pawn_drops;
+        private Location[][,] valid_drops, valid_pawn_drops;
         public bool IS_CLONE;
 
 
@@ -26,6 +27,7 @@ namespace GungiRevision.Objects
         {
             IS_CLONE = false;
             p_selected = null;
+            gamestate = GameState.SETUP;
             
             players = new Player[]
             {
@@ -70,14 +72,15 @@ namespace GungiRevision.Objects
 
         private void Clear()
         {
+            p_all = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
             p_top = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
             p_checked_by = new List<Piece>[] {new List<Piece>(), new List<Piece>()};
             p_elevators = new List<Piece>();
             p_marshals = new Piece[] {null, null};
             check_status = new CheckStatus[] { CheckStatus.SAFE, CheckStatus.SAFE };
 
-            valid_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
-            valid_pawn_drops = new Location[Constants.MAX_RANKS, Constants.MAX_FILES];
+            valid_drops = new Location[][,] { new Location[Constants.MAX_RANKS, Constants.MAX_FILES], new Location[Constants.MAX_RANKS, Constants.MAX_FILES] };
+            valid_pawn_drops = new Location[][,] { new Location[Constants.MAX_RANKS, Constants.MAX_FILES], new Location[Constants.MAX_RANKS, Constants.MAX_FILES] };
         }
 
         private void Update()
@@ -100,17 +103,22 @@ namespace GungiRevision.Objects
             for (int r = 1; r <= Constants.MAX_RANKS; r++)
                 for (int f = 1; f <= Constants.MAX_FILES; f++)
                 {
-                    Piece p = TopPieceAt(r, f);
-
-                    if (p != null)
+                    List<Piece> stack = StackAt(r, f);
+                    foreach (Piece all_piece in stack)
                     {
-                        p_top[(int)p.player.color].Add(p);
-                        p.Clear();
+                        all_piece.Clear();
+                        p_all[(int)all_piece.player.color].Add(all_piece);
+                    }
+                    
+                    Piece top = TopPieceAt(r, f);
+                    if (top != null)
+                    {
+                        p_top[(int)top.player.color].Add(top);
 
-                        if (p.type == PieceType.MARSHAL)
-                            p_marshals[(int)p.player.color] = p;
-                        else if (p.type == PieceType.LIEUTENANT || p.type == PieceType.FORTRESS)
-                            p_elevators.Add(p);
+                        if (top.type == PieceType.MARSHAL)
+                            p_marshals[(int)top.player.color] = top;
+                        else if (top.type == PieceType.LIEUTENANT || top.type == PieceType.FORTRESS)
+                            p_elevators.Add(top);
                     }
                 }
 
@@ -128,8 +136,9 @@ namespace GungiRevision.Objects
                     UpdateDropsFor(h);
             }
 
-            foreach (Piece m in p_marshals)
-                UpdateInCheck(m);
+            if (gamestate != GameState.SETUP)
+                foreach (Piece m in p_marshals)
+                    UpdateInCheck(m);
         }
 
 
@@ -143,10 +152,20 @@ namespace GungiRevision.Objects
             p_selected = null;
         }
 
+        public void SetGameState(GameState gs)
+        {
+            gamestate = gs;
+        }
+
 
         public Player Player(PlayerColor c)
         {
             return players[(int)c];
+        }
+
+        public List<Piece> PlayerAllPieces(Player pl)
+        {
+            return p_all[(int)pl.color];
         }
         
         public List<Piece> PlayerTopPieces(Player pl)
@@ -169,9 +188,28 @@ namespace GungiRevision.Objects
                         int stack_height = StackHeight(r, f);
                         if (stack_height < Constants.MAX_TIERS)
                         {
-                            valid_drops[r-1, f-1] = new Location(r, f, stack_height+1);
-                            // Deal with pawn check drops
-                            valid_pawn_drops[r-1, f-1] = new Location(r, f, stack_height+1);
+                            if (gamestate == GameState.SETUP)
+                            {
+                                if (r <= Constants.NUM_SETUP_RANKS)
+                                    valid_drops[(int)PlayerColor.WHITE][r-1, f-1] = new Location(r, f, stack_height+1);
+                                else if (r > Constants.MAX_RANKS - Constants.NUM_SETUP_RANKS)
+                                    valid_drops[(int)PlayerColor.BLACK][r-1, f-1] = new Location(r, f, stack_height+1);
+                            }
+                            else
+                            {
+                                foreach (Player pl in players)
+                                {
+                                    valid_drops[(int)pl.color][r-1, f-1] = new Location(r, f, stack_height+1);
+                                    valid_pawn_drops[(int)pl.color][r-1, f-1] = new Location(r, f, stack_height+1);
+                                
+                                    if (r >= p_marshals[(int)pl.color].location.rank-1 && r <= p_marshals[(int)pl.color].location.rank+1
+                                        && f >= p_marshals[(int)pl.color].location.file-1 && f <= p_marshals[(int)pl.color].location.file + 1)
+                                    {
+                                        if (CheckedByPawnDrop(pl.color, r, f))
+                                            valid_pawn_drops[(int)Util.OtherPlayerColor(pl.color)][r-1, f-1] = null;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -179,10 +217,12 @@ namespace GungiRevision.Objects
         
         public void UpdateDropsFor(Piece p)
         {
-            if (p.type == PieceType.PAWN)
-                p.SetValidDrops(valid_pawn_drops);
+            if (gamestate == GameState.SETUP)
+                p.SetValidDrops(valid_drops[(int)p.player.color]);
+            else if (p.type == PieceType.PAWN)
+                p.SetValidDrops(valid_pawn_drops[(int)p.player.color]);
             else
-                p.SetValidDrops(valid_drops);
+                p.SetValidDrops(valid_drops[(int)p.player.color]);
         }
 
 
@@ -383,7 +423,7 @@ namespace GungiRevision.Objects
             return status;
         }
 
-        private CheckStatus CheckStatusAfterCloneAttackTo(PlayerColor c, int from_r, int from_f, int to_r, int to_f)
+        public CheckStatus CheckStatusAfterCloneAttackTo(PlayerColor c, int from_r, int from_f, int to_r, int to_f)
         {
             Board clone_board = this.Clone();
             Player clone_player = clone_board.players[(int)c];
@@ -396,35 +436,52 @@ namespace GungiRevision.Objects
             return status;
         }
 
+        private bool CheckedByPawnDrop(PlayerColor c, int r, int f)
+        {
+            Board clone_board = this.Clone();
+            Player clone_player = clone_board.players[(int)c];
+            Piece clone_piece = clone_player.GetHandPiece(PieceType.PAWN);
+
+            bool checked_by_pawn_drop = false;
+            Piece clone_m = clone_board.p_marshals[(int)c];
+            
+            int player_color = (int)clone_m.player.color;
+            int enemy_color = (int)Util.OtherPlayerColor(clone_m.player.color);
+
+            clone_board.DropPieceTo(clone_piece, r, f);
+
+            if (clone_piece.CanAttackTo(clone_m.location.rank, clone_m.location.file))
+                checked_by_pawn_drop = true;
+
+            clone_board = null;
+            return checked_by_pawn_drop;
+        }
+
 
         public void PrintBoard()
         {
-            PrintBoard(0, Constants.LEGEND, false, false, false, false);
+            PrintBoard(0, Constants.LEGEND, false, false, false);
         }
-        public void PrintBoard(PlayerColor c)
+        public void PrintBoardAndHand(Player pl)
         {
-            PrintBoard(c, Constants.LEGEND, true, false, false, false);
+            Util.PRL("");
+            PrintBoard(0, pl.HandToLegend(), false, false, false);
         }
-        public void PrintBoardSelection()
+        public void PrintBoardSelection(Player pl)
         {
-            if (p_selected == null)
+            if (p_selected.status == Status.HAND)
             {
-                Util.PRL("Selected piece is null. Cannot print board.\n");
-                return;
-            }
-            else if (p_selected.status == Status.HAND)
-            {
-                Util.PRL("Valid drop locations for [" + p_selected + "]:");
-                PrintBoard(0, Constants.LEGEND, false, false, false, true);
+                Util.PRL("\nValid drop locations for [" + p_selected + "]:");
+                PrintBoard(0, Constants.LEGEND, false, false, true);
             }
             else if (p_selected.status == Status.BOARD)
             {
-                Util.PRL("Valid moves and attacks for [" + p_selected + "]:");
-                PrintBoard(0, Constants.LEGEND, false, true, true, false);
+                Util.PRL("\nValid moves and attacks for [" + p_selected + "]:");
+                PrintBoard(0, Constants.LEGEND, true, true, false);
             }
         }
 
-        public void PrintBoard(PlayerColor c, string[] legend, bool pl_pieces, bool moves, bool attacks, bool drops)
+        public void PrintBoard(PlayerColor c, string[] legend, bool moves, bool attacks, bool drops)
         {
             int legend_i = 0;
             string str = "";
@@ -446,28 +503,35 @@ namespace GungiRevision.Objects
                 {
                     string str_stack = "";
 
-                    if (pl_pieces)
-                        foreach (Piece p in StackAt(r, f))
-                        {
-                            if (c == p.player.color)
-                                str_stack += Constants.CHAR_FRIENDLY;
-                        }
-                    else if (drops && p_selected.CanDropTo(r, f))
+                    if (drops && p_selected.CanDropTo(r, f))
                     {
                         for (int t = 1; t <= StackHeight(r, f); t++)
                             str_stack += Constants.CHAR_H_SEPARATOR;
 
                         str_stack += Constants.CHAR_DROP;
                     } 
-                    else
+                    else if (moves || attacks)
                     {
-                        for (int t = 1; t <= StackHeight(r, f)-1; t++)
-                            str_stack += Constants.CHAR_H_SEPARATOR;
+                        if (p_selected != null && r == p_selected.location.rank && f == p_selected.location.file)
+                        {
+                            for (int t = 1; t < p_selected.location.tier; t++)
+                                str_stack += Constants.CHAR_H_SEPARATOR;
+                            str_stack += Constants.CHAR_SELECTED;
+                        }
+                        else
+                        {
+                            for (int t = 1; t < StackHeight(r, f); t++)
+                                str_stack += Constants.CHAR_H_SEPARATOR;
 
-                        if (attacks && p_selected.CanAttackTo(r, f))
-                            str_stack += Constants.CHAR_ATTACK;
-                        if (moves && p_selected.CanMoveTo(r, f))
-                            str_stack += Constants.CHAR_MOVE;
+                            if (attacks && p_selected.CanAttackTo(r, f))
+                                str_stack += Constants.CHAR_ATTACK;
+                            
+                            for (int t = str_stack.Length; t < StackHeight(r, f); t++)
+                                str_stack += Constants.CHAR_H_SEPARATOR;
+
+                            if (moves && p_selected.CanMoveTo(r, f))
+                                str_stack += Constants.CHAR_MOVE;
+                        }
                     }
 
                     for (int t = str_stack.Length+1; t <= Constants.MAX_TIERS; t++)
@@ -476,8 +540,7 @@ namespace GungiRevision.Objects
                     str += str_stack + Constants.CHAR_I_SEPARATOR;
                 }
                 
-                if (2*Math.Abs( (Constants.MAX_RANKS/2)-r ) <= legend.Length/2
-                    && legend_i < legend.Length)
+                if (r < Constants.MAX_RANKS && legend_i < legend.Length)
                     str += "  " + legend[legend_i++];
 
                 str += "\n";
@@ -497,8 +560,7 @@ namespace GungiRevision.Objects
                     str += str_stack + Constants.CHAR_V_SEPARATOR;
                 }
 
-                if (2*Math.Abs( (Constants.MAX_RANKS/2)-(r-1) ) <= (legend.Length/2)
-                    && legend_i < legend.Length)
+                if (r < Constants.MAX_RANKS && legend_i < legend.Length)
                     str += "  " + legend[legend_i++];
 
                 str += "\n";

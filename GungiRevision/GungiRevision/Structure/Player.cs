@@ -152,9 +152,8 @@ namespace GungiRevision.Objects
             return color.ToString();
         }
 
-        public void PrintHand()
+        public Dictionary<string, int> HandToDict()
         {
-            string str = "";
             Dictionary<string, int> dict = new Dictionary<string, int>();
 
             foreach (Piece p in p_hand)
@@ -163,12 +162,39 @@ namespace GungiRevision.Objects
                 else
                     dict.Add(p.ToString(), 1);
 
-            foreach (KeyValuePair<string, int> num in dict)
+            return dict;
+        }
+        
+        public void PrintHand()
+        {
+            string str = "";
+
+            foreach (KeyValuePair<string, int> num in HandToDict())
             {
-                str += num.Key.ToString() + ":" + num.Value + "  ";
+                str += num.Key + ":" + num.Value + "  ";
             }
 
+            HandToLegend();
+
             Util.PRL(str);
+        }
+
+        public string[] HandToLegend()
+        {
+            Dictionary<string, int> dict = HandToDict();
+            
+            string[] legend = new string[dict.Count+2];
+            legend[0] = "-----" + color + "'s Hand-----";
+            legend[legend.Length-1] = "----------------------";
+
+            for (int i = 0; i < dict.Count; i++)
+            {
+                string piece_name = Util.PieceName((PieceType)dict.ElementAt(i).Key.ToUpper()[0]);
+                string str = " [" + dict.ElementAt(i).Value + "] " + dict.ElementAt(i).Key.ToUpper() + dict.ElementAt(i).Key.ToLower() + " = " + piece_name;
+                legend[i+1] = str;
+            }
+
+            return legend;
         }
     }
 }
