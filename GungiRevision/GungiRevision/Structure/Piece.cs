@@ -45,7 +45,6 @@ namespace GungiRevision.Objects
             return clone_p;
         }
 
-
         public void Clear()
         {
             lt_sight = false;
@@ -60,6 +59,83 @@ namespace GungiRevision.Objects
 
             valid_moves_list = new List<Location>();
             valid_attacks_list = new List<Location>();
+        }
+
+
+        public bool IsFriendlyWith(Piece p)
+        {
+            return player.Is(p.player);
+        }
+
+
+        public Location GetDropAt(int r, int f)
+        {
+            if (CanDropTo(r, f))
+                return valid_drops[r-1, f-1];
+            else
+                return null;
+        }
+        
+        public Location GetMoveAt(int r, int f)
+        {
+            if (CanMoveTo(r, f))
+                return valid_moves[r-1, f-1];
+            else
+                return null;
+        }
+
+        public Location GetAttackAt(int r, int f)
+        {
+            if (CanAttackTo(r, f))
+                return valid_attacks[r-1, f-1];
+            else
+                return null;
+        }
+
+
+        public bool CanDropTo(Location l)
+        {
+            return valid_drops[l.rank-1, l.file-1] != null && valid_drops[l.rank-1, l.file-1].Is(l);
+        }
+        public bool CanDropTo(int r, int f)
+        {
+            return valid_drops[r-1, f-1] != null;
+        }
+
+        public bool CanMoveTo(Location l)
+        {
+            return valid_moves[l.rank-1, l.file-1] != null && valid_moves[l.rank-1, l.file-1].Is(l);
+        }
+        public bool CanMoveTo(int r, int f)
+        {
+            return valid_moves[r-1, f-1] != null;
+        }
+
+        public bool CanAttackTo(Location l)
+        {
+            return valid_attacks[l.rank-1, l.file-1] != null && valid_attacks[l.rank-1, l.file-1].Is(l);
+        }
+        public bool CanAttackTo(int r, int f)
+        {
+            return valid_attacks[r-1, f-1] != null;
+        }
+
+
+        public void SetValidDrops(Location[,] drops)
+        {
+            valid_drops = drops;
+        }
+
+        public void AddValidMoveAt(Location m)
+        {
+            valid_moves[m.rank-1, m.file-1] = m;
+            valid_moves_list.Add(m);
+        }
+
+        public void AddValidAttackAt(Location a)
+        {
+            valid_attacks[a.rank-1, a.file-1] = a;
+            valid_attacks_list.Add(a);
         }
 
 
@@ -83,89 +159,6 @@ namespace GungiRevision.Objects
             location = null;
         }
 
-        public bool CanDropTo(Location l)
-        {
-            return valid_drops[l.rank-1, l.file-1] != null && valid_drops[l.rank-1, l.file-1].Equals(l);
-        }
-        public bool CanDropTo(int r, int f)
-        {
-            return valid_drops[r-1, f-1] != null;
-        }
-
-        public bool CanMoveTo(Location l)
-        {
-            return valid_moves[l.rank-1, l.file-1] != null && valid_moves[l.rank-1, l.file-1].Equals(l);
-        }
-        public bool CanMoveTo(int r, int f)
-        {
-            return valid_moves[r-1, f-1] != null;
-        }
-
-        public bool CanAttackTo(Location l)
-        {
-            return valid_attacks[l.rank-1, l.file-1] != null && valid_attacks[l.rank-1, l.file-1].Equals(l);
-        }
-        public bool CanAttackTo(int r, int f)
-        {
-            return valid_attacks[r-1, f-1] != null;
-        }
-
-        public void SetValidDrops(Location[,] drops)
-        {
-            valid_drops = drops;
-        }
-
-        public void AddValidMoveAt(Location m)
-        {
-            valid_moves[m.rank-1, m.file-1] = m;
-            valid_moves_list.Add(m);
-        }
-
-        public void AddValidAttackAt(Location a)
-        {
-            valid_attacks[a.rank-1, a.file-1] = a;
-            valid_attacks_list.Add(a);
-        }
-
-        public Location GetMoveAt(int r, int f)
-        {
-            if (CanMoveTo(r, f))
-                return valid_moves[r-1, f-1];
-            else
-                return null;
-        }
-
-        public Location GetAttackAt(int r, int f)
-        {
-            if (CanAttackTo(r, f))
-                return valid_attacks[r-1, f-1];
-            else
-                return null;
-        }
-
-        public Location GetDropAt(int r, int f)
-        {
-            if (CanDropTo(r, f))
-                return valid_drops[r-1, f-1];
-            else
-                return null;
-        }
-
-
-        public bool IsFriendlyWith(Piece p)
-        {
-            return player.Equals(p.player);
-        }
-
-
-        override
-        public string ToString()
-        {
-            String symbol = ( (char)type ).ToString();
-            if (player.color == PlayerColor.BLACK)
-                symbol = symbol.ToLower();
-            return symbol;
-        }
 
         public string Name()
         {
@@ -206,5 +199,15 @@ namespace GungiRevision.Objects
                     return "Invalid";
             }
         }
+
+        override
+        public string ToString()
+        {
+            String symbol = ( (char)type ).ToString();
+            if (player.color == PlayerColor.BLACK)
+                symbol = symbol.ToLower();
+            return symbol;
+        }
+
     }
 }

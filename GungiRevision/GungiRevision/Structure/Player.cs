@@ -51,6 +51,38 @@ namespace GungiRevision.Objects
         }
 
 
+        public bool HasHandPiece(PieceType pt)
+        {
+            return p_hand.Count(p => p.type == pt) > 0;
+        }
+        public bool HasNonPawnHandPiece()
+        {
+            return p_hand.Count(p => p.type != PieceType.PAWN) > 0;
+        }
+        
+        public Piece GetHandPiece(PieceType pt)
+        {
+            if (HasHandPiece(pt))
+                return p_hand.Find(p => p.type == pt);
+            else
+                return null;
+        }
+        public Piece GetHandPiece(int rand)
+        {
+            if (p_hand.Count > 0)
+                return p_hand.ElementAt(rand);
+            else
+                return null;
+        }
+        public Piece GetNonPawnHandPiece()
+        {
+            if (HasNonPawnHandPiece())
+                return p_hand.Find(p => p.type != PieceType.PAWN);
+            else
+                return null;
+        }
+
+
         // Called only by Board
         public void DropPiece(Piece p)
         {
@@ -118,43 +150,6 @@ namespace GungiRevision.Objects
             return list;
         }
 
-        public bool HasHandPiece(PieceType pt)
-        {
-            return p_hand.Count(p => p.type == pt) > 0;
-        }
-        public bool HasNonPawnHandPiece()
-        {
-            return p_hand.Count(p => p.type != PieceType.PAWN) > 0;
-        }
-        
-        public Piece GetHandPiece(PieceType pt)
-        {
-            if (HasHandPiece(pt))
-                return p_hand.Find(p => p.type == pt);
-            else
-                return null;
-        }
-        public Piece GetHandPiece(int rand)
-        {
-            if (p_hand.Count > 0)
-                return p_hand.ElementAt(rand);
-            else
-                return null;
-        }
-        public Piece GetNonPawnHandPiece()
-        {
-            if (HasNonPawnHandPiece())
-                return p_hand.Find(p => p.type != PieceType.PAWN);
-            else
-                return null;
-        }
-
-
-        override
-        public string ToString()
-        {
-            return color.ToString();
-        }
 
         public Dictionary<string, int> HandToDict()
         {
@@ -200,5 +195,22 @@ namespace GungiRevision.Objects
 
             return legend;
         }
+
+        public bool Is(Player pl)
+        {
+            if (color != pl.color)
+                return false;
+            foreach (Piece p in p_hand)
+                if (!pl.p_hand.Contains(p))
+                    return false;
+            return true;
+        }
+
+        override
+        public string ToString()
+        {
+            return color.ToString();
+        }
+
     }
 }

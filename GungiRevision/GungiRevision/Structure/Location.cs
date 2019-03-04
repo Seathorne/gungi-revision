@@ -32,16 +32,9 @@ namespace GungiRevision
                 && f >= 1 && f <= Constants.MAX_FILES;
         }
 
-        override
-        public bool Equals(Object o)
+        public bool Is(Location l)
         {
-            return GetHashCode() == o.GetHashCode();
-        }
-
-        override
-        public int GetHashCode()
-        {
-            return (Constants.HASH_RANK * rank) + (Constants.HASH_FILE * file) + (Constants.HASH_TIER * tier);
+            return rank == l.rank && file == l.file && tier == l.tier;
         }
 
         override

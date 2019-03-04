@@ -25,6 +25,7 @@ namespace GungiRevision
         private static CheckStatus check_status;
         private static double turn_count;
 
+
         public static void Main(string[] args)
         {
             log_output = true;
@@ -32,6 +33,7 @@ namespace GungiRevision
             board = new Board();
             random = new Random();
 
+            // Black starts the placement phase
             black = board.Player(PlayerColor.BLACK);
             white = board.Player(PlayerColor.WHITE);
             curr_player = black;
@@ -51,6 +53,7 @@ namespace GungiRevision
             }
         }
 
+        // Runs a single turn of the game
         private static void Update()
         {
             curr_option = Option.NULL;
@@ -80,20 +83,8 @@ namespace GungiRevision
             }
         }
 
-        private static void PrintBoardBlank()
-        {
-            board.PrintBoard();
-        }
-        private static void PrintBoard()
-        {
-            board.PrintBoardAndHand(curr_player);
-        }
-        private static void PrintBoardSelection()
-        {
-            board.Select(sel_piece);
-            board.PrintBoardSelection(curr_player);
-        }
 
+        // Runs a turn of the game during the setup phase
         private static void SetupTurn()
         {
             // Drop
@@ -166,6 +157,7 @@ namespace GungiRevision
             }
         }
 
+        // Runs a turn of the game after the setup phase is over
         private static void RegularTurn()
         {
             if (board.PlayerTopPieces(curr_player).Count < Constants.MAX_BOARD_PIECES && curr_player.p_hand.Count > 0)
@@ -222,6 +214,8 @@ namespace GungiRevision
             }
         }
 
+
+        // Checks if the non-starting player begins the game in check, or checks if the current player is in check or checkmate
         private static CheckStatus CheckCheck()
         {
             check_status = board.GetCheck(curr_player);
@@ -268,12 +262,13 @@ namespace GungiRevision
                 return check_status;
         }
         
+        // Changes whose turn it is, deals with ending setup phase, and updates the turn count
         private static void SwapTurn()
         {
             sel_piece = null;
             sel_location = null;
 
-            if (gamestate == GameState.SETUP && (turn_count >= 27 || ((prev_player.done_setup || prev_player.passed) && (curr_player.done_setup || curr_player.passed))) )
+            if (gamestate == GameState.SETUP && (turn_count >= Constants.MAX_BOARD_PIECES-1 || ((prev_player.done_setup || prev_player.passed) && (curr_player.done_setup || curr_player.passed))) )
             {
                 EndSetup();
                 return;
@@ -286,6 +281,7 @@ namespace GungiRevision
             turn_count += 0.5;
         }
 
+        // Called to end setup phase, updates Board's gamestate as well
         private static void EndSetup()
         {
             Util.L(" Both players have completed their placement phases.");
@@ -294,6 +290,7 @@ namespace GungiRevision
             gamestate = GameState.TURNS;
             board.SetGameState(gamestate);
 
+            // White starts first in the game
             prev_player = black;
             curr_player = white;
             
@@ -301,6 +298,7 @@ namespace GungiRevision
             curr_option = Option.NULL;
         }
 
+        // Gives the player options for their first turn of the game
         private static void CheckDropMarshal()
         {
             PrintBoard();
@@ -315,6 +313,7 @@ namespace GungiRevision
                 if (curr_option == Option.BACK)
                 {
                     log_output = !log_output;
+                    Util.L("Output logging has been toggled to be " + log_output + ".");
                 }
                 else if (curr_option == Option.SELECT_DROP)
                 {
@@ -328,6 +327,7 @@ namespace GungiRevision
             }
         }
 
+        // Gives the player options for selecting a drop location for a piece
         private static void CheckDropPiece()
         {
             PrintBoardSelection();
@@ -344,6 +344,7 @@ namespace GungiRevision
             }
         }
 
+        // Gives a player options for selecting a location to move/attack a piece
         private static void CheckMoveOrAttackPiece()
         {
             PrintBoardSelection();
@@ -365,6 +366,7 @@ namespace GungiRevision
             }
         }
 
+        // Gives a player a prompt, then reads their input and doles it out to a corresponding function to deal with it
         private static Option SelectPrompt(String prompt, List<Option> options)
         {
             Option op = Option.NULL;
@@ -427,6 +429,7 @@ namespace GungiRevision
             return op;
         }
 
+        // Uses player input to select a piece from hand, returns false if the operation fails
         private static bool SelectHandPiece(string choice)
         {
             sel_piece = null;
@@ -445,6 +448,7 @@ namespace GungiRevision
             return sel_piece != null;
         }
 
+        // Uses player input to select a location, return false if the operation fails
         private static bool SelectLocation(string rft, Option location_type)
         {
             sel_location = null;
@@ -505,6 +509,7 @@ namespace GungiRevision
                 }
             }
 
+            // Check if the selected location will be an invalid move due to leaving the player in check
             if (sel_location != null && gamestate != GameState.SETUP)
             {
                 switch (location_type)
@@ -536,6 +541,16 @@ namespace GungiRevision
             return sel_location != null;
         }
 
+
+        // Waits for the user to press any key
+        private static void Wait()
+        {
+            Util.L("Press a key to continue.");
+            Console.ReadKey(true);
+            Util.L("");
+        }
+
+        // Logs user input to a file
         private static void LogDrop(Option op)
         {
             if (log_output)
@@ -565,29 +580,20 @@ namespace GungiRevision
             }
         }
 
-        private static void Wait()
+        // Options for printing the board
+        private static void PrintBoardBlank()
         {
-            Util.L("Press a key to continue.");
-            Console.ReadKey(true);
-            Util.L("");
+            board.PrintBoard();
+        }
+        private static void PrintBoard()
+        {
+            board.PrintBoardAndHand(curr_player);
+        }
+        private static void PrintBoardSelection()
+        {
+            board.Select(sel_piece);
+            board.PrintBoardSelection(curr_player);
         }
 
-
-        private static bool AllHashesUnique()
-        {
-            List<Object> list = new List<Object>();
-
-            // Player hashes
-            list.Add(board.Player(PlayerColor.BLACK));
-            list.Add(board.Player(PlayerColor.WHITE));
-
-            // Location hashes
-            for (int r = 1; r <= Constants.MAX_RANKS; r++)
-                for (int f = 1; f <= Constants.MAX_FILES; f++)
-                    for (int t = 1; t <= Constants.MAX_TIERS; t++)
-                        list.Add(new Location(r, f, t));
-            
-            return Util.HashesUnique<Object>(list);
-        }
     }
 }

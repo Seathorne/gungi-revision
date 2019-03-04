@@ -76,11 +76,8 @@ namespace GungiRevision
     
     public class Constants
     {
-        public const int MAX_RANKS = 9, MAX_FILES = MAX_RANKS, MAX_TIERS = 3, NUM_SETUP_RANKS = 3,
-            MAX_MOVES = MAX_RANKS-1,
-            MIN_SETUP_PIECES = 18, MAX_BOARD_PIECES = 26;
-
-        public const int HASH_PLAYER = 37783, HASH_RANK = 37277, HASH_FILE = 62017, HASH_TIER = 24109;
+        public const int MAX_RANKS = 9, MAX_FILES = MAX_RANKS, MAX_TIERS = 3, MAX_MOVES = MAX_RANKS-1,
+            NUM_SETUP_RANKS = 3, MIN_SETUP_PIECES = 18, MAX_BOARD_PIECES = 26;
 
         public const string CHAR_SELECTED = "%", CHAR_MOVE = "o", CHAR_ATTACK = "#", CHAR_DROP = "o",
             CHAR_V_SEPARATOR = "|", CHAR_H_SEPARATOR = "-", CHAR_I_SEPARATOR = "·", CHAR_EMPTY = " ";
