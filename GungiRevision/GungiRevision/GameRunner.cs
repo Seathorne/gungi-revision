@@ -51,6 +51,7 @@ namespace GungiRevision
             {
                 Update();
             }
+            PrintBoardBlank();
         }
 
         // Runs a single turn of the game
@@ -556,19 +557,21 @@ namespace GungiRevision
             if (log_output)
             {
                 string turn = "";
+                if (turn_count == 1 && !curr_player.done_setup)
+                    Util.Log(".");
                 if (turn_count == 1 || turn_count%5 == 0)
-                    turn = " #" + (int)turn_count;
+                    turn += " #" + (int)turn_count;
 
                 switch (op)
                 {
                     case Option.PASS:
-                        Util.Log("pass" + turn);
+                        Util.Log("pass " + turn);
                         break;
                     case Option.DONE:
-                        Util.Log("done" + turn);
+                        Util.Log("done " + turn);
                         break;
                     case Option.SELECT_DROP:
-                        Util.Log(sel_piece + turn);
+                        Util.Log(sel_piece + "    " + turn);
                         Util.Log(sel_location);
                         break;
                     case Option.SELECT_MOVE:

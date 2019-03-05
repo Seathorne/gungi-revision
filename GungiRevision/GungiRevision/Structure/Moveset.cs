@@ -57,8 +57,8 @@ namespace GungiRevision.Objects
                     AddBentMove(3,  2,2,2,2, 1, MoveType.TELEPORTABLE);
                     break;
                 case PieceType.SAMURAI:
-                    AddStraightMove(1,  0,1,0,1,0, MoveType.TELEPORTABLE);
-                    AddStraightMove(2,  0,2,0,2,0, MoveType.TELEPORTABLE);
+                    AddStraightMove(1,  0,1,0,1,0, MoveType.BLOCKABLE);
+                    AddStraightMove(2,  0,2,0,2,0, MoveType.BLOCKABLE);
                     AddStraightMove(3,  0,Constants.MAX_MOVES,0,Constants.MAX_MOVES,0, MoveType.BLOCKABLE);
                     break;
                 case PieceType.CANNON:
